@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="GraphicsDevice\uosGraphicsDevice.cpp">
+      <Filter>GraphicsDevice</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicsDevice\uosGraphicsDeviceD3D11.cpp">
+      <Filter>GraphicsDevice</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicsDevice\uosGraphicsDeviceOpenGL.cpp">
+      <Filter>GraphicsDevice</Filter>
+    </ClCompile>
+    <ClCompile Include="UnityOpenSubdiv.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="GraphicsDevice\uosGraphicsDevice.h">
+      <Filter>GraphicsDevice</Filter>
+    </ClInclude>
+    <ClInclude Include="UnityOpenSubdiv.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="GraphicsDevice">
+      <UniqueIdentifier>{a0e5e438-2063-4574-b032-d8b71c7d8d73}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
