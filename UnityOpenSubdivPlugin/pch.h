@@ -6,6 +6,11 @@
 #include <functional>
 #include <atomic>
 
+#include <glm/glm.hpp>
+typedef glm::vec2 float2;
+typedef glm::vec3 float3;
+typedef glm::vec4 float4;
+
 
 #ifdef _MSC_VER
     #define and &&
@@ -51,6 +56,10 @@ void uosDebugLogImpl(const char* fmt, ...);
 
 #ifdef uosWindows
 #include <windows.h>
+#ifdef min
+#undef min
+#undef max
+#endif
 
 #ifndef aiNoAutoLink
 #endif // aiNoAutoLink

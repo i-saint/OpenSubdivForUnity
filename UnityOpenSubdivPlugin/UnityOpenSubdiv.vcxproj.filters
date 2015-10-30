@@ -12,6 +12,9 @@
       <Filter>GraphicsDevice</Filter>
     </ClCompile>
     <ClCompile Include="UnityOpenSubdiv.cpp" />
+    <ClCompile Include="BezierPatch\BezierPatch.cpp">
+      <Filter>BezierPatch</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -19,10 +22,16 @@
       <Filter>GraphicsDevice</Filter>
     </ClInclude>
     <ClInclude Include="UnityOpenSubdiv.h" />
+    <ClInclude Include="BezierPatch\BezierPatch.h">
+      <Filter>BezierPatch</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="GraphicsDevice">
       <UniqueIdentifier>{a0e5e438-2063-4574-b032-d8b71c7d8d73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BezierPatch">
+      <UniqueIdentifier>{3fce569a-60be-4a06-9f17-dcc7b010a1fb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
