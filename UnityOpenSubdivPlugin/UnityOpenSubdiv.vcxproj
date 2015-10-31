@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BezierPatch\BezierPatch.cpp" />
+    <ClCompile Include="BezierPatch\Intersection.cpp" />
     <ClCompile Include="GraphicsDevice\uosGraphicsDevice.cpp" />
     <ClCompile Include="GraphicsDevice\uosGraphicsDeviceD3D11.cpp" />
     <ClCompile Include="GraphicsDevice\uosGraphicsDeviceOpenGL.cpp" />
@@ -28,6 +29,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BezierPatch\BezierPatch.h" />
+    <ClInclude Include="BezierPatch\Intersection.h" />
     <ClInclude Include="GraphicsDevice\uosGraphicsDevice.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="UnityOpenSubdiv.h" />

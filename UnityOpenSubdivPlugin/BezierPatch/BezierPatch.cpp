@@ -4,6 +4,213 @@
 
 
 
+
+
+
+
+BezierPatch::BezierPatch()
+{
+}
+
+BezierPatch::BezierPatch(const float3 *p)
+{
+    for (int i = 0; i < Ncp; ++i)
+    {
+        m_cp[i] = p[i];
+    }
+}
+
+BezierPatch::BezierPatch(const BezierPatch &v)
+{
+    for (int i = 0; i < Ncp; ++i)
+    {
+        m_cp[i] = v[i];
+    }
+}
+
+BezierPatch::BezierPatch(const BezierPatch &v, const float3x3 &m)
+{
+    for (int i = 0; i < Ncp; ++i)
+    {
+        m_cp[i] = m * v[i];
+    }
+}
+
+BezierPatch::BezierPatch(const BezierPatch &v, const float4x4 &m)
+{
+    for (int i = 0; i < Ncp; ++i)
+    {
+        m_cp[i] = float3(m * float4(v[i], 1.0f));
+    }
+}
+
+BezierPatch::BezierPatch(const BezierPatch &v, float u0, float u1, float v0, float v1)
+{
+    for (int i = 0; i < Ncp; ++i) m_cp[i] = v[i];
+    float3 tmp[Ncp];
+    for (int i = 0; i < N; ++i) bezierCrop(&tmp[i*N + 0], &m_cp[i*N + 0], u0, u1);
+    for (int i = 0; i < N; ++i) bezierCropV(&m_cp[i], &tmp[i], v0, v1);
+}
+
+const float3& BezierPatch::Get(int i, int j) const
+{
+    return m_cp[N*j + i];
+}
+
+void BezierPatch::Set(int i, int j, const float3& v)
+{
+    m_cp[N*j + i] = v;
+}
+
+
+float3 BezierPatch::GetMin() const
+{
+    float3 min_ = m_cp[0];
+    for (int i = 1; i < Ncp; ++i) {
+        min_ = min(min_, m_cp[i]);
+    }
+    return min_;
+}
+
+float3 BezierPatch::GetMax() const
+{
+    float3 max_ = m_cp[0];
+    for (int i = 1; i < Ncp; ++i) {
+        max_ = max(max_, m_cp[i]);
+    }
+    return max_;
+}
+
+void BezierPatch::GetMinMax(float3 &o_min, float3 &o_max, float epsilon) const
+{
+    o_min = o_max = m_cp[0];
+    for (int i = 1; i < Ncp; ++i)
+    {
+        o_min = min(o_min, m_cp[i]);
+        o_max = max(o_max, m_cp[i]);
+    }
+    o_min -= epsilon;
+    o_max += epsilon;
+}
+
+
+float3 BezierPatch::Evaluate(const float2& uv) const
+{
+    float3 b[N];
+    for (int i = 0; i < N; ++i) {
+        b[i] = evaluate(uv.x, m_cp + i*N);
+    }
+    return evaluate(uv.y, b);
+}
+
+float3 BezierPatch::EvaluateDu(const float2& uv) const
+{
+    float3 b[N];
+    for (int i = 0; i < N; ++i) {
+        b[i] = evaluateD(uv.x, m_cp + i*N);
+    }
+    return evaluate(uv.y, b);
+}
+
+float3 BezierPatch::EvaluateDv(const float2& uv) const
+{
+    float3 b[N];
+    for (int i = 0; i < N; ++i) {
+        b[i] = evaluate(uv.x, m_cp + i*N);
+    }
+    return evaluateD(uv.y, b);
+}
+
+float3 BezierPatch::EvaluateNormal(const float2& uv) const
+{
+    float3 du = EvaluateDu(uv);
+    float3 dv = EvaluateDv(uv);
+    return normalize(cross(du, dv));
+}
+
+void BezierPatch::Split(BezierPatch patches[4], float u, float v) const
+{
+    BezierPatch tmp0, tmp1;
+
+    // split U
+    for (int i = 0; i < N; ++i) {
+        bezierSplit(&tmp0[i*N + 0], &tmp1[i*N + 0], &m_cp[i*N + 0], u);
+    }
+
+    // uv -> vu
+    tmp0.Transpose(); // 00 01
+    tmp1.Transpose(); // 10 11
+
+    // split V
+    for (int i = 0; i < N; ++i) {
+        bezierSplit(&patches[0].m_cp[i*N + 0],
+            &patches[2].m_cp[i*N + 0],
+            &tmp0[i*N + 0], v);
+        bezierSplit(&patches[1].m_cp[i*N + 0],
+            &patches[3].m_cp[i*N + 0],
+            &tmp1[i*N + 0], v);
+    }
+
+    // vu -> uv
+    patches[0].Transpose(); //00
+    patches[1].Transpose(); //10
+    patches[2].Transpose(); //01
+    patches[3].Transpose(); //11
+}
+
+void BezierPatch::SplitU(BezierPatch patches[2], float u) const
+{
+    for (int i = 0; i < N; ++i) {
+        bezierSplit(&patches[0].m_cp[i*N + 0],
+            &patches[1].m_cp[i*N + 0],
+            &m_cp[i*N + 0], u);
+    }
+}
+
+void BezierPatch::SplitV(BezierPatch patches[2], float v) const
+{
+    for (int i = 0; i < N; ++i) {
+        bezierSplitV(&patches[0].m_cp[i],
+            &patches[1].m_cp[i],
+            &m_cp[i], v);
+    }
+}
+
+void BezierPatch::CropU(BezierPatch &patch, float u0, float u1) const
+{
+    for (int i = 0; i < N; ++i) {
+        bezierCrop(&patch.m_cp[i*N + 0], &m_cp[i*N + 0], u0, u1);
+    }
+}
+
+void BezierPatch::CropV(BezierPatch &patch, float v0, float v1) const
+{
+    for (int i = 0; i < N; ++i) {
+        bezierCropV(&patch.m_cp[i], &m_cp[i], v0, v1);
+    }
+}
+
+bool BezierPatch::Crop(BezierPatch &patch, float u0, float u1, float v0, float v1) const
+{
+    float3 tmp[Ncp];
+    for (int i = 0; i < N; ++i) bezierCrop(&tmp[i*N + 0], &m_cp[i*N + 0], u0, u1);
+    for (int i = 0; i < N; ++i) bezierCropV(&patch.m_cp[i], &tmp[i], v0, v1);
+    return true;
+}
+
+float3 BezierPatch::GetLv() const
+{
+    return Get(0, N - 1) - Get(0, 0) + Get(N - 1, N - 1) - Get(N - 1, 0);
+}
+
+float3 BezierPatch::GetLu() const
+{
+    return Get(N - 1, 0) - Get(0, 0) + Get(N - 1, N - 1) - Get(0, N - 1);
+}
+
+
+
+
 template<int N, int k>
 struct Binomial
 {
@@ -125,221 +332,6 @@ struct BezierCrop<4, STRIDE>
     }
 };
 
-
-
-
-BezierPatch::BezierPatch()
-{
-}
-
-BezierPatch::BezierPatch(const float3 *p)
-{
-    for (int i = 0; i < Ncp; ++i) m_cp[i] = p[i];
-}
-
-BezierPatch::BezierPatch(const BezierPatch &other)
-{
-    for (int i = 0; i < Ncp; ++i) m_cp[i] = other.m_cp[i];
-}
-
-template<typename MATRIX>
-BezierPatch::BezierPatch(const BezierPatch &other, const MATRIX &m)
-{
-    for (int i = 0; i < Ncp; ++i) m_cp[i] = m * other.m_cp[i];
-}
-
-BezierPatch::BezierPatch(const BezierPatch &other, float u0, float u1, float v0, float v1)
-{
-    for (int i = 0; i < Ncp; ++i) m_cp[i] = other.m_cp[i];
-    float3 tmp[Ncp];
-    for (int i = 0; i < N; ++i) bezierCrop(&tmp[i*N + 0], &m_cp[i*N + 0], u0, u1);
-    for (int i = 0; i < N; ++i) bezierCropV(&m_cp[i], &tmp[i], v0, v1);
-}
-
-const float3& BezierPatch::Get(int i, int j) const
-{
-    return m_cp[N*j + i];
-}
-
-void BezierPatch::Set(int i, int j, const float3& v)
-{
-    m_cp[N*j + i] = v;
-}
-
-float3 BezierPatch::Evaluate(float u, float v) const
-{
-    float3 b[N];
-    for (int i = 0; i < N; ++i) {
-        b[i] = evaluate(u, m_cp + i*N);
-    }
-    return evaluate(v, b);
-}
-
-float3 BezierPatch::EvaluateDu(float u, float v) const
-{
-    float3 b[N];
-    for (int i = 0; i < N; ++i) {
-        b[i] = evaluateD(u, m_cp + i*N);
-    }
-    return evaluate(v, b);
-}
-
-float3 BezierPatch::EvaluateDv(float u, float v) const
-{
-    float3 b[N];
-    for (int i = 0; i < N; ++i) {
-        b[i] = evaluate(u, m_cp + i*N);
-    }
-    return evaluateD(v, b);
-}
-
-float3 BezierPatch::EvaluateNormal(float u, float v) const
-{
-    float3 du = EvaluateDu(u, v);
-    float3 dv = EvaluateDv(u, v);
-    float3 normal = normalize(cross(du, dv));
-    return normal;
-}
-
-float3 BezierPatch::GetMin() const
-{
-    float3 min_ = m_cp[0];
-    for (int i = 1; i < Ncp; ++i) {
-        min_ = min(min_, m_cp[i]);
-    }
-    return min_;
-}
-
-float3 BezierPatch::GetMax() const
-{
-    float3 max_ = m_cp[0];
-    for (int i = 1; i < Ncp; ++i) {
-        max_ = max(max_, m_cp[i]);
-    }
-    return max_;
-}
-
-void BezierPatch::GetMinMax(float3 &o_min, float3 &o_max) const
-{
-    o_min = o_max = m_cp[0];
-    for (int i = 1; i < Ncp; ++i)
-    {
-        o_min = min(o_min, m_cp[i]);
-        o_max = max(o_max, m_cp[i]);
-    }
-
-    //min_ = m_cp[0].min(m_cp[1]).min(m_cp[2]).min(m_cp[3])
-    //    .min(m_cp[4]).min(m_cp[5]).min(m_cp[6]).min(m_cp[7])
-    //    .min(m_cp[8]).min(m_cp[9]).min(m_cp[10]).min(m_cp[11])
-    //    .min(m_cp[12]).min(m_cp[13]).min(m_cp[14]).min(m_cp[15]);
-    //max_ = m_cp[0].max(m_cp[1]).max(m_cp[2]).max(m_cp[3])
-    //    .max(m_cp[4]).max(m_cp[5]).max(m_cp[6]).max(m_cp[7])
-    //    .max(m_cp[8]).max(m_cp[9]).max(m_cp[10]).max(m_cp[11])
-    //    .max(m_cp[12]).max(m_cp[13]).max(m_cp[14]).max(m_cp[15]);
-}
-
-void BezierPatch::GetMinMax(float3 &o_min, float3 &o_max, float eps) const
-{
-    GetMinMax(o_min, o_max);
-    o_min -= float3(eps);
-    o_max += float3(eps);
-}
-
-template<typename MATRIX>
-BezierPatch& BezierPatch::Transform(const MATRIX &m)
-{
-    for (int i = 0; i < Ncp; ++i) m_cp[i] = m * m_cp[i];
-    return *this;
-}
-
-void BezierPatch::Split(BezierPatch patches[4], float u, float v) const
-{
-    float3 tmp0[Ncp], tmp1[Ncp];
-
-    // split U
-    for (int i = 0; i < N; ++i) {
-        bezierSplit(&tmp0[i*N + 0], &tmp1[i*N + 0], &m_cp[i*N + 0], u);
-    }
-    // uv -> vu
-    transpose(&tmp0[0]);// 00 01
-    transpose(&tmp1[0]);// 10 11
-
-                        // split V
-    for (int i = 0; i < N; ++i) {
-        bezierSplit(&patches[0].m_cp[i*N + 0],
-            &patches[2].m_cp[i*N + 0],
-            &tmp0[i*N + 0], v);
-        bezierSplit(&patches[1].m_cp[i*N + 0],
-            &patches[3].m_cp[i*N + 0],
-            &tmp1[i*N + 0], v);
-    }
-    // vu -> uv
-    transpose(patches[0].m_cp);//00
-    transpose(patches[1].m_cp);//10
-    transpose(patches[2].m_cp);//01
-    transpose(patches[3].m_cp);//11
-}
-
-void BezierPatch::SplitU(BezierPatch patches[2], float u) const
-{
-    for (int i = 0; i < N; ++i) {
-        bezierSplit(&patches[0].m_cp[i*N + 0],
-            &patches[1].m_cp[i*N + 0],
-            &m_cp[i*N + 0], u);
-    }
-}
-
-void BezierPatch::SplitV(BezierPatch patches[2], float v) const
-{
-    for (int i = 0; i < N; ++i) {
-        bezierSplitV(&patches[0].m_cp[i],
-            &patches[1].m_cp[i],
-            &m_cp[i], v);
-    }
-}
-
-void BezierPatch::CropU(BezierPatch &patch, float u0, float u1) const
-{
-    for (int i = 0; i < N; ++i) {
-        bezierCrop(&patch.m_cp[i*N + 0], &m_cp[i*N + 0], u0, u1);
-    }
-}
-
-void BezierPatch::CropV(BezierPatch &patch, float v0, float v1) const
-{
-    for (int i = 0; i < N; ++i) {
-        bezierCropV(&patch.m_cp[i], &m_cp[i], v0, v1);
-    }
-}
-
-bool BezierPatch::Crop(BezierPatch &patch, float u0, float u1, float v0, float v1) const
-{
-    float3 tmp[Ncp];
-    for (int i = 0; i < N; ++i) bezierCrop(&tmp[i*N + 0], &m_cp[i*N + 0], u0, u1);
-    for (int i = 0; i < N; ++i) bezierCropV(&patch.m_cp[i], &tmp[i], v0, v1);
-    return true;
-}
-
-float3 BezierPatch::GetLv() const
-{
-    return Get(0, N - 1) - Get(0, 0) + Get(N - 1, N - 1) - Get(N - 1, 0);
-}
-
-float3 BezierPatch::GetLu() const
-{
-    return Get(N - 1, 0) - Get(0, 0) + Get(N - 1, N - 1) - Get(0, N - 1);
-}
-
-void BezierPatch::Rotate()
-{
-    transpose(m_cp);
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N / 2; ++j) {
-            std::swap(m_cp[i*N + j], m_cp[i*N + N - 1 - j]);
-        }
-    }
-}
-
 void BezierPatch::bezierSplit(float3 a[], float3 b[], const float3 p[], float t) const
 {
     BezierSplit<N, 0, 1> split(a, b, p, t);
@@ -360,25 +352,38 @@ void BezierPatch::bezierCropV(float3 r[], const float3 p[], float s, float t) co
     BezierCrop<N, N> crop(r, p, s, t);
 }
 
-void BezierPatch::transpose(float3 m[])
-{
-    for (int y = 0; y < N; ++y) {
-        for (int x = y + 1; x < N; ++x) {
-            std::swap(m[x*N + y], m[y*N + x]);
-        }
-    }
-}
-
-float3 BezierPatch::evaluate(float t, const float3 * const cp)
+float3 BezierPatch::evaluate(float t, const float3 *cp)
 {
     return BezierCurveEvaluate<N - 1, N - 1>::evaluate(t, cp);
 }
 
-float3 BezierPatch::evaluateD(float t, const float3 * const cp)
+float3 BezierPatch::evaluateD(float t, const float3 *cp)
 {
     float t2 = t * t;
     return cp[0] * (3.0f * t2 *-1.0f + 2.0f * t * 3.0f +-3.0f)
          + cp[1] * (3.0f * t2 * 3.0f + 2.0f * t *-6.0f + 3.0f)
          + cp[2] * (3.0f * t2 *-3.0f + 2.0f * t * 3.0f)
          + cp[3] * (3.0f * t2 * 1.0f);
+}
+
+
+
+
+void BezierPatch::Transpose()
+{
+    for (int y = 0; y < N; ++y) {
+        for (int x = y + 1; x < N; ++x) {
+            std::swap(m_cp[x*N + y], m_cp[y*N + x]);
+        }
+    }
+}
+
+void BezierPatch::Transform(const float3x3 &m)
+{
+    ForEach([&m](float3 &cp) { cp = m * cp; });
+}
+
+void BezierPatch::Transform(const float4x4 &m)
+{
+    ForEach([&m](float3 &cp) { cp = float3(m * float4(cp, 1.0f)); });
 }

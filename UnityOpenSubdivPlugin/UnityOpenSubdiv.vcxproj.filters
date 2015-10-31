@@ -15,6 +15,9 @@
     <ClCompile Include="BezierPatch\BezierPatch.cpp">
       <Filter>BezierPatch</Filter>
     </ClCompile>
+    <ClCompile Include="BezierPatch\Intersection.cpp">
+      <Filter>BezierPatch</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -23,6 +26,9 @@
     </ClInclude>
     <ClInclude Include="UnityOpenSubdiv.h" />
     <ClInclude Include="BezierPatch\BezierPatch.h">
+      <Filter>BezierPatch</Filter>
+    </ClInclude>
+    <ClInclude Include="BezierPatch\Intersection.h">
       <Filter>BezierPatch</Filter>
     </ClInclude>
   </ItemGroup>
