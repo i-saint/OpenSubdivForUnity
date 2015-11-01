@@ -352,18 +352,25 @@ void BezierPatch::bezierCropV(float3 r[], const float3 p[], float s, float t) co
     BezierCrop<N, N> crop(r, p, s, t);
 }
 
+
 float3 BezierPatch::evaluate(float t, const float3 *cp)
 {
-    return BezierCurveEvaluate<N - 1, N - 1>::evaluate(t, cp);
+    //return BezierCurveEvaluate<N - 1, N - 1>::evaluate(t, cp);
+
+    float it = 1.0f - t;
+    return cp[0] * (       (it*it*it)          )
+         + cp[1] * (3.0f * (it*it   ) * (t)    )
+         + cp[2] * (3.0f * (it      ) * (t*t)  )
+         + cp[3] * (                    (t*t*t));
 }
 
 float3 BezierPatch::evaluateD(float t, const float3 *cp)
 {
     float t2 = t * t;
-    return cp[0] * (3.0f * t2 *-1.0f + 2.0f * t * 3.0f +-3.0f)
+    return cp[0] * (3.0f * t2 *-1.0f + 2.0f * t * 3.0f - 3.0f)
          + cp[1] * (3.0f * t2 * 3.0f + 2.0f * t *-6.0f + 3.0f)
-         + cp[2] * (3.0f * t2 *-3.0f + 2.0f * t * 3.0f)
-         + cp[3] * (3.0f * t2 * 1.0f);
+         + cp[2] * (3.0f * t2 *-3.0f + 2.0f * t * 3.0f       )
+         + cp[3] * (3.0f * t2 * 1.0f                         );
 }
 
 

@@ -27,8 +27,6 @@ StructuredBuffer<BezierPatch> _BPatches;
 
 
 
-
-
 struct ia_out
 {
     uint vertexID : SV_VertexID;
