@@ -1,28 +1,68 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using System.Collections;
+using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+using Ist;
 
 [ExecuteInEditMode]
 public class BezierPatchEditor : MonoBehaviour
 {
+    public BezierPatch m_bpatch = new BezierPatch();
     public bool m_lock;
-    public Vector3[] m_cp = InitializeBezierPatch();
     Transform[] m_cpobj;
     ComputeBuffer m_cb;
-    
 
-    static Vector3[] InitializeBezierPatch()
+
+#if UNITY_EDITOR
+    public void GenerateMesh()
     {
-        var cp = new Vector3[16];
-        float span = 2.0f / 3.0f;
-        for (int y = 0; y < 4; ++y)
+        GameObject go = new GameObject();
+        go.name = "Bezier Patch Mesh";
+        var mesh_filter = go.AddComponent<MeshFilter>();
+        var mesh_renderer = go.AddComponent<MeshRenderer>();
+        mesh_renderer.sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/BezierPatchExample/Materials/Default.mat");
+
+        var mesh = new Mesh();
         {
-            for (int x = 0; x < 4; ++x)
+            const int div = 16;
+            const int divsq = div * div;
+            var indices = new int[divsq * 6];
+            var vertices = new Vector3[divsq];
+            var normals = new Vector3[divsq];
+            var span = new Vector2(1.0f / (div-1), 1.0f / (div-1));
+
+            for (int y = 0; y < div; ++y)
             {
-                cp[4 * y + x] = new Vector3(-1.0f + span * x, 0.0f, -1.0f + span * y);
+                for (int x = 0; x < div; ++x)
+                {
+                    int i = y * div + x;
+                    var uv = new Vector2(span.x*x, span.y*y);
+                    vertices[i] = m_bpatch.Evaluate(uv);
+                    normals[i] = -m_bpatch.EvaluateNormal(uv);
+                }
             }
+            for (int y = 0; y < div-1; ++y)
+            {
+                for (int x = 0; x < div-1; ++x)
+                {
+                    indices[(y * div + x) * 6 + 0] = (y + 0) * div + (x + 0);
+                    indices[(y * div + x) * 6 + 1] = (y + 1) * div + (x + 0);
+                    indices[(y * div + x) * 6 + 2] = (y + 1) * div + (x + 1);
+
+                    indices[(y * div + x) * 6 + 3] = (y + 0) * div + (x + 0);
+                    indices[(y * div + x) * 6 + 4] = (y + 1) * div + (x + 1);
+                    indices[(y * div + x) * 6 + 5] = (y + 0) * div + (x + 1);
+                }
+            }
+            mesh.vertices = vertices;
+            mesh.normals = normals;
+            mesh.SetIndices(indices, MeshTopology.Triangles, 0);
         }
-        return cp;
+
+        mesh_filter.sharedMesh = mesh;
     }
+#endif
 
     void DestroyControlPointes()
     {
@@ -58,7 +98,7 @@ public class BezierPatchEditor : MonoBehaviour
                     go.name = "Control Point [" + y + "][" + x + "]";
                     go.AddComponent<BezierPatchControlPoint>();
                     var t = go.GetComponent<Transform>();
-                    t.position = m_cp[i];
+                    t.position = m_bpatch.cp[i];
                     t.SetParent(trans);
                     m_cpobj[i] = t;
                 }
@@ -81,9 +121,9 @@ public class BezierPatchEditor : MonoBehaviour
         else
         {
             ConstructControlPoints();
-            for (int i = 0; i < m_cp.Length; ++i)
+            for (int i = 0; i < m_bpatch.cp.Length; ++i)
             {
-                m_cp[i] = m_cpobj[i].position;
+                m_bpatch.cp[i] = m_cpobj[i].position;
             }
         }
     }
@@ -92,18 +132,19 @@ public class BezierPatchEditor : MonoBehaviour
     void OnDrawGizmos()
     {
         Gizmos.color = Color.cyan;
+        var cp = m_bpatch.cp;
         for (int y = 0; y < 4; ++y)
         {
             for (int x = 0; x < 3; ++x)
             {
-                Gizmos.DrawLine(m_cp[y*4 + x], m_cp[y*4 + x+1]);
+                Gizmos.DrawLine(cp[y*4 + x], cp[y*4 + x+1]);
             }
         }
         for (int y = 0; y < 3; ++y)
         {
             for (int x = 0; x < 4; ++x)
             {
-                Gizmos.DrawLine(m_cp[y * 4 + x], m_cp[(y+1) * 4 + x]);
+                Gizmos.DrawLine(cp[y * 4 + x], cp[(y+1) * 4 + x]);
             }
         }
     }

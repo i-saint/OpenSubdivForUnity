@@ -59,4 +59,8 @@ private:
     float3 m_cp[Ncp];
 };
 
-#endif // !BezierPatch_h
+
+
+
+
+#endif // BezierPatch_h

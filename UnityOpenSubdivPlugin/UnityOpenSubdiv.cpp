@@ -1,10 +1,12 @@
 ﻿#include "pch.h"
 #include "UnityOpenSubdiv.h"
+#include "BezierPatch//BezierPatch.h"
+#include "BezierPatch//Intersection.h"
 
 #ifdef uosWindows
     #include <windows.h>
-    #pragma comment(lib, "osdCPU.lib")
-    #pragma comment(lib, "osdGPU.lib")
+    //#pragma comment(lib, "osdCPU.lib")
+    //#pragma comment(lib, "osdGPU.lib")
 #else // uosWindows
 #endif // uosWindows
 
@@ -42,4 +44,16 @@ uosCLinkage uosExport uosContext* uosCreateContext()
 uosCLinkage uosExport void uosDestroyContext(uosContext* ctx)
 {
     uosDebugLog("uosDestroyContext(): %p\n", ctx);
+}
+
+
+
+uosCLinkage uosExport cfloat3 BezierPatchEvaluate(const BezierPatch *bp, const float2 *uv)
+{
+    return (cfloat3&)bp->Evaluate(*uv);
+}
+
+uosCLinkage uosExport cfloat3 BezierPatchEvaluateNormal(const BezierPatch *bp, const float2 *uv)
+{
+    return (cfloat3&)bp->EvaluateNormal(*uv);
 }
