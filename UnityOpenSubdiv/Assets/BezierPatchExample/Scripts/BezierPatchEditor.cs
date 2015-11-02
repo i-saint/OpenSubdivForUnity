@@ -39,7 +39,7 @@ public class BezierPatchEditor : MonoBehaviour
                     int i = y * div + x;
                     var uv = new Vector2(span.x*x, span.y*y);
                     vertices[i] = m_bpatch.Evaluate(uv);
-                    normals[i] = -m_bpatch.EvaluateNormal(uv);
+                    normals[i] = m_bpatch.EvaluateNormal(uv);
                 }
             }
             for (int y = 0; y < div-1; ++y)
@@ -64,7 +64,7 @@ public class BezierPatchEditor : MonoBehaviour
     }
 #endif
 
-    void DestroyControlPointes()
+    void DestroyControlPoints()
     {
         if (m_cpobj != null)
         {
@@ -107,16 +107,16 @@ public class BezierPatchEditor : MonoBehaviour
     }
 
 
-    void OnDisable()
+    void OnDestroy()
     {
-        DestroyControlPointes();
+        DestroyControlPoints();
     }
 
     void Update()
     {
         if(m_lock)
         {
-            DestroyControlPointes();
+            DestroyControlPoints();
         }
         else
         {

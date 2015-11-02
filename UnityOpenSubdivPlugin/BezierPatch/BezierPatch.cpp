@@ -125,7 +125,7 @@ float3 BezierPatch::EvaluateNormal(const float2& uv) const
 {
     float3 du = EvaluateDu(uv);
     float3 dv = EvaluateDv(uv);
-    return normalize(cross(du, dv));
+    return normalize(cross(dv, du));
 }
 
 void BezierPatch::Split(BezierPatch patches[4], float u, float v) const
