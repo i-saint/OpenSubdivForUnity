@@ -14,10 +14,10 @@ public class BezierPatchEditorEditor : Editor
     {
         DrawDefaultInspector();
 
-        if (GUILayout.Button("Generate Mesh"))
-        {
-            var t = target as BezierPatchEditor;
-            t.GenerateMesh();
-        }
+        //if (GUILayout.Button("Generate Mesh"))
+        //{
+        //    var t = target as BezierPatchEditor;
+        //    t.GenerateMesh();
+        //}
     }
 }
