@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "BezierPatch.h"
-#include "Intersection.h"
+#include "BezierPatchIntersection.h"
 
 #define trace(...)
 #define N 4
@@ -126,6 +126,14 @@ static void CoarseSort(int order[2], BezierPatch tmp[2])
 }
 
 // --------------------------------------------------------------------
+
+struct Curve
+{
+    static const int LENGTH = 4;
+    float2 operator[](int i) const { return v[i]; }
+    float2 &operator[](int i) { return v[i]; }
+    float2 v[LENGTH];
+};
 
 bool ScanMinMax(const Curve& p)
 {
@@ -534,7 +542,7 @@ static bool TestQuadPlane(T *t, T *u, T *v,
 }
 
 
-BezierPatchIntersection::BezierPatchIntersection(const BezierPatch &patch) :
+BezierPatchIntersectionImpl::BezierPatchIntersectionImpl(const BezierPatch &patch) :
     m_patch(patch),
     m_eps(Epsilon::GetEps()),
     m_maxLevel(DEFAULT_MAX_LEVEL),
@@ -553,80 +561,51 @@ BezierPatchIntersection::BezierPatchIntersection(const BezierPatch &patch) :
     patch.GetMinMax(m_min, m_max, 1e-3f);
 }
 
-BezierPatchIntersection::~BezierPatchIntersection()
+BezierPatchIntersectionImpl::~BezierPatchIntersectionImpl()
 {
 }
 
-void BezierPatchIntersection::SetEpsilon(float eps)
+void BezierPatchIntersectionImpl::SetEpsilon(float eps)
 {
     m_eps = std::max(std::numeric_limits<float>::epsilon() * 1e+1f, eps);
 }
-void BezierPatchIntersection::SetMaxLevel(int maxLevel)
+void BezierPatchIntersectionImpl::SetMaxLevel(int maxLevel)
 {
     m_maxLevel = maxLevel;
 }
-void BezierPatchIntersection::SetUVMergin(float uvMargin)
+void BezierPatchIntersectionImpl::SetUVMergin(float uvMargin)
 {
     m_uvMargin = uvMargin;
 }
-void BezierPatchIntersection::SetCropUV(bool cropUV)
+void BezierPatchIntersectionImpl::SetCropUV(bool cropUV)
 {
     m_cropUV = cropUV;
 }
-void BezierPatchIntersection::SetUseBezierClip(bool useBezierClip)
+void BezierPatchIntersectionImpl::SetUseBezierClip(bool useBezierClip)
 {
     m_useBezierClip = useBezierClip;
 }
-void BezierPatchIntersection::SetUseTriangle(bool useTriangle)
+void BezierPatchIntersectionImpl::SetUseTriangle(bool useTriangle)
 {
     m_useTriangle = useTriangle;
 }
-void BezierPatchIntersection::SetDirectBilinear(bool directBilinear)
+void BezierPatchIntersectionImpl::SetDirectBilinear(bool directBilinear)
 {
     m_directBilinear = directBilinear;
 }
-void BezierPatchIntersection::SetWatertightFlag(int wcpFlag)
+void BezierPatchIntersectionImpl::SetWatertightFlag(int wcpFlag)
 {
     m_wcpFlag = wcpFlag;
 }
 
 
-bool BezierPatchIntersection::Test(Intersection &info, const Ray& r, float tmin, float tmax)
+bool BezierPatchIntersectionImpl::Test(BezierPatchHit &info, const Ray& r, float tmin, float tmax)
 {
-    RangeAABB rng;
-    if (intersectAABB(rng, m_min, m_max, r, tmin, tmax)) {
-        tmin = std::max(tmin, rng.tmin);
-        tmax = std::min(tmax, rng.tmax);
-
-        return testInternal(info, r, tmin, tmax);
-    }
-    return false;
-}
-
-float BezierPatchIntersection::ComputeEpsilon(const Ray& r, float eps) const
-{
-    RangeAABB rng;
-    if (r.hasDifferential &&
-        intersectAABB(rng, m_min, m_max, r, 0, std::numeric_limits<float>::max()))
-    {
-        float t = std::max(float(0), rng.tmin);
-        float3 dir(r.dir[0], r.dir[1], r.dir[2]);
-        float3 dirDX = normalize(dir + float3(r.dDdx[0], r.dDdx[1], r.dDdx[2]));
-        float3 dirDY = normalize(dir + float3(r.dDdy[0], r.dDdy[1], r.dDdy[2]));
-        float3 P0 = t * dir;
-        float3 PX = t * dirDX;
-        float3 PY = t * dirDY;
-
-        float lx = (PX - P0).length();
-        float ly = (PY - P0).length();
-
-        eps = std::min(lx, ly)*float(0.25);
-    }
-    return eps;
+    return testInternal(info, r, tmin, tmax);
 }
 
 
-bool BezierPatchIntersection::testInternal(Intersection &info, const Ray& r, float tmin, float tmax)
+bool BezierPatchIntersectionImpl::testInternal(BezierPatchHit &info, const Ray& r, float tmin, float tmax)
 {
     float4x4 mat = RayTransform(r.org, r.dir); // getZAlign
 
@@ -710,22 +689,22 @@ bool BezierPatchIntersection::testInternal(Intersection &info, const Ray& r, flo
     return bRet;
 }
 
-bool BezierPatchIntersection::testBezierPatch(UVT& info, const BezierPatch& patch, float zmin, float zmax, float eps)
+bool BezierPatchIntersectionImpl::testBezierPatch(UVT& info, const BezierPatch& patch, float zmin, float zmax, float eps)
 {
     float3 min, max;
     patch.GetMinMax(min, max, 1e-3f);
 
-    if (0 < min[0] || max[0] < 0) return false;//x
-    if (0 < min[1] || max[1] < 0) return false;//y
-    if (max[2] < zmin || zmax < min[2]) return false;//z
+    if (0.0f < min.x || max.x < 0.0f) return false; //x
+    if (0.0f < min.y || max.y < 0.0f) return false; //y
+    if (max.z < zmin || zmax < min.z) return false; //z
 
-    if (m_cropUV) return testBezierClipRangeU(info, patch, 0, 1, 0, 1, zmin, zmax, 0, m_maxLevel, eps);
-    else         return testBezierClipU(info, patch, 0, 1, 0, 1, zmin, zmax, 0, m_maxLevel, eps);
+    if (m_cropUV) return testBezierClipRangeU(info, patch, 0.0f, 1.0f, 0.0f, 1.0f, zmin, zmax, 0, m_maxLevel, eps);
+    else          return testBezierClipU(info, patch, 0.0f, 1.0f, 0.0f, 1.0f, zmin, zmax, 0, m_maxLevel, eps);
 }
 
 
 
-bool BezierPatchIntersection::testBezierClipU(UVT& info, const BezierPatch & patch,
+bool BezierPatchIntersectionImpl::testBezierClipU(UVT& info, const BezierPatch & patch,
     float u0, float u1, float v0, float v1,
     float zmin, float zmax,
     int level, int max_level, float eps)
@@ -740,11 +719,12 @@ bool BezierPatchIntersection::testBezierClipU(UVT& info, const BezierPatch & pat
     float3 min, max;
     patch.GetMinMax(min, max, 1e-3f);
 
-    if (0 < min[0] || max[0] < 0 || // x
-        0 < min[1] || max[1] < 0 || // y
-        max[2] < zmin || zmax < min[2]) { // z
+    if (0.0f < min.x || max.x < 0.0f || // x
+        0.0f < min.y || max.y < 0.0f || // y
+        max.z < zmin || zmax < min.z )  // z
+    {
 #if USE_MINMAX_FAILFLAG
-                                          // set failFlag only if it's very close
+        // set failFlag only if it's very close
         if (fabs(min[0]) < eps ||
             fabs(max[0]) < eps ||
             fabs(min[1]) < eps ||
@@ -810,7 +790,7 @@ bool BezierPatchIntersection::testBezierClipU(UVT& info, const BezierPatch & pat
     return false;
 }
 
-bool BezierPatchIntersection::testBezierClipV(UVT& info, const BezierPatch& patch,
+bool BezierPatchIntersectionImpl::testBezierClipV(UVT& info, const BezierPatch& patch,
     float u0, float u1, float v0, float v1, float zmin, float zmax,
     int level, int max_level, float eps)
 {
@@ -898,7 +878,7 @@ bool BezierPatchIntersection::testBezierClipV(UVT& info, const BezierPatch& patc
     return false;
 }
 
-bool BezierPatchIntersection::testBezierClipL(UVT& info, const BezierPatch& patch,
+bool BezierPatchIntersectionImpl::testBezierClipL(UVT& info, const BezierPatch& patch,
     float u0, float u1, float v0, float v1,
     float zmin, float zmax, int level)
 {
@@ -1020,7 +1000,7 @@ bool BezierPatchIntersection::testBezierClipL(UVT& info, const BezierPatch& patc
     return bRet;
 }
 
-bool BezierPatchIntersection::testBezierClipRangeU(UVT& info, const BezierPatch& patch,
+bool BezierPatchIntersectionImpl::testBezierClipRangeU(UVT& info, const BezierPatch& patch,
     float u0, float u1,
     float v0, float v1, float zmin, float zmax,
     int level, int max_level, float eps)
@@ -1090,7 +1070,7 @@ bool BezierPatchIntersection::testBezierClipRangeU(UVT& info, const BezierPatch&
     return false;
 }
 
-bool BezierPatchIntersection::testBezierClipRangeV(UVT& info, const BezierPatch& patch,
+bool BezierPatchIntersectionImpl::testBezierClipRangeV(UVT& info, const BezierPatch& patch,
     float u0, float u1, float v0, float v1, float zmin, float zmax,
     int level, int max_level, float eps)
 {
@@ -1157,23 +1137,4 @@ bool BezierPatchIntersection::testBezierClipRangeV(UVT& info, const BezierPatch&
         }
     }
     return false;
-}
-
-bool BezierPatchIntersection::intersectAABB(RangeAABB& rng, float3 const & min, float3 const & max,
-    const Ray & r, float tmin, float tmax) const
-{
-    int sign[3] = { r.dirSign[0], r.dirSign[1], r.dirSign[2] };
-    float3 box[2] = { min, max };
-
-    float3 org(r.org[0], r.org[1], r.org[2]);
-    float3 idir(r.invDir[0], r.invDir[1], r.invDir[2]);
-
-    for (int i = 0; i < 3; ++i) {
-        tmin = std::max(tmin, (box[sign[i]][i] - org[i])*idir[i]);
-        tmax = std::min(tmax, (box[1 - sign[i]][i] - org[i])*idir[i]);
-    }
-    rng.tmin = tmin;
-    rng.tmax = tmax;
-
-    return rng.tmin <= rng.tmax;
 }

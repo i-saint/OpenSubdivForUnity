@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "UnityOpenSubdiv.h"
-#include "BezierPatch//BezierPatch.h"
-#include "BezierPatch//Intersection.h"
+#include "BezierPatch/BezierPatch.h"
+#include "BezierPatch/BezierPatchIntersection.h"
 
 #ifdef uosWindows
     #include <windows.h>
@@ -56,4 +56,10 @@ uosCLinkage uosExport cfloat3 BezierPatchEvaluate(const BezierPatch *bp, const f
 uosCLinkage uosExport cfloat3 BezierPatchEvaluateNormal(const BezierPatch *bp, const float2 *uv)
 {
     return (cfloat3&)bp->EvaluateNormal(*uv);
+}
+
+uosCLinkage uosExport bool BezierPatchRayIntersection(const BezierPatch *bp, const Ray *ray, BezierPatchHit *hit)
+{
+    BezierPatchIntersectionImpl impl(*bp);
+    return impl.Test(*hit, *ray, FLT_MIN, FLT_MAX);
 }

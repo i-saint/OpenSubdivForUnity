@@ -1,5 +1,5 @@
-#ifndef Intersection_h
-#define Intersection_h
+#ifndef BezierPatchIntersection_h
+#define BezierPatchIntersection_h
 
 #include "BezierPatch.h"
 
@@ -8,24 +8,9 @@ struct Ray
 {
     float3 org;
     float3 dir;
-    float3 invDir;
-    int dirSign[3];
-    int depth;
-    bool hasDifferential;
-
-    float3 dDdx;
-    float3 dDdy;
 };
 
-struct Curve
-{
-    static const int LENGTH = 4;
-    float2 operator[](int i) const { return v[i]; }
-    float2 &operator[](int i) { return v[i]; }
-    float2 v[LENGTH];
-};
-
-struct Intersection
+struct BezierPatchHit
 {
     float t;
     float u;
@@ -33,26 +18,19 @@ struct Intersection
     uint32_t clip_level;
 };
 
-class BezierPatchIntersection
+bool BezierPatchRayIntersection(const BezierPatch &bp, const Ray &ray, BezierPatchHit &hit);
+
+
+class BezierPatchIntersectionImpl
 {
 public:
     static const int N = 4;
     static const int  DEFAULT_MAX_LEVEL = 10;
     static const int  MAX_ITERATION = 1000;
 
-    struct RangeAABB {
-        float tmin, tmax;
-    };
-    struct UVT {
-        UVT() : u(0), v(0), t(0), level(0) { }
-        float u, v, t;
-        int level;
-        int failFlag;
-    };
 
-
-    BezierPatchIntersection(const BezierPatch& patch);
-    ~BezierPatchIntersection();
+    BezierPatchIntersectionImpl(const BezierPatch& patch);
+    ~BezierPatchIntersectionImpl();
 
     void SetEpsilon(float eps);
     void SetMaxLevel(int maxLevel);
@@ -63,11 +41,18 @@ public:
     void SetDirectBilinear(bool directBilinear);
     void SetWatertightFlag(int wcpFlag);
 
-    bool Test(Intersection &info, const Ray& r, float tmin, float tmax);
-    float ComputeEpsilon(Ray const & r, float eps) const;
+    bool Test(BezierPatchHit &info, const Ray& r, float tmin, float tmax);
 
-protected:
-    bool testInternal(Intersection& info, const Ray& r, float tmin, float tmax);
+private:
+    struct UVT
+    {
+        UVT() : u(0), v(0), t(0), level(0) { }
+        float u, v, t;
+        int level;
+        int failFlag;
+    };
+
+    bool testInternal(BezierPatchHit& info, const Ray& r, float tmin, float tmax);
     bool testBezierPatch(UVT& info, BezierPatch const & patch, float zmin, float zmax, float eps);
 
 
@@ -93,8 +78,6 @@ protected:
         float u0, float u1, float v0, float v1, float zmin, float zmax,
         int level, int max_level, float eps);
 
-    bool intersectAABB(RangeAABB& rng, const float3& min, const float3 & max,
-        const Ray & r, float tmin, float tmax) const;
 
     const BezierPatch &m_patch;
     float m_uRange[2];
@@ -113,4 +96,4 @@ protected:
     int m_count;
 };
 
-#endif // Intersection_h
+#endif // BezierPatchIntersection_h

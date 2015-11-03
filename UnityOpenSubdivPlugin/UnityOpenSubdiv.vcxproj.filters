@@ -15,7 +15,7 @@
     <ClCompile Include="BezierPatch\BezierPatch.cpp">
       <Filter>BezierPatch</Filter>
     </ClCompile>
-    <ClCompile Include="BezierPatch\Intersection.cpp">
+    <ClCompile Include="BezierPatch\BezierPatchIntersection.cpp">
       <Filter>BezierPatch</Filter>
     </ClCompile>
   </ItemGroup>
@@ -28,7 +28,7 @@
     <ClInclude Include="BezierPatch\BezierPatch.h">
       <Filter>BezierPatch</Filter>
     </ClInclude>
-    <ClInclude Include="BezierPatch\Intersection.h">
+    <ClInclude Include="BezierPatch\BezierPatchIntersection.h">
       <Filter>BezierPatch</Filter>
     </ClInclude>
   </ItemGroup>
