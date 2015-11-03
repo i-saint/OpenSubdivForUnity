@@ -591,10 +591,10 @@ void BezierPatchIntersection::SetWatertightFlag(int wcpFlag)
 }
 
 
-bool BezierPatchIntersection::Test(Intersection* info, const Ray& r, float tmin, float tmax)
+bool BezierPatchIntersection::Test(Intersection &info, const Ray& r, float tmin, float tmax)
 {
     RangeAABB rng;
-    if (intersectAABB(&rng, m_min, m_max, r, tmin, tmax)) {
+    if (intersectAABB(rng, m_min, m_max, r, tmin, tmax)) {
         tmin = std::max(tmin, rng.tmin);
         tmax = std::min(tmax, rng.tmax);
 
@@ -603,14 +603,13 @@ bool BezierPatchIntersection::Test(Intersection* info, const Ray& r, float tmin,
     return false;
 }
 
-float BezierPatchIntersection::ComputeEpsilon(Ray const & r, float eps) const
+float BezierPatchIntersection::ComputeEpsilon(const Ray& r, float eps) const
 {
     RangeAABB rng;
     if (r.hasDifferential &&
-        intersectAABB(&rng, m_min, m_max, r, 0, std::numeric_limits<float>::max()))
+        intersectAABB(rng, m_min, m_max, r, 0, std::numeric_limits<float>::max()))
     {
         float t = std::max(float(0), rng.tmin);
-        //float3 org(r.org[0], r.org[1], r.org[2]);
         float3 dir(r.dir[0], r.dir[1], r.dir[2]);
         float3 dirDX = normalize(dir + float3(r.dDdx[0], r.dDdx[1], r.dDdx[2]));
         float3 dirDY = normalize(dir + float3(r.dDdy[0], r.dDdy[1], r.dDdy[2]));
@@ -627,7 +626,7 @@ float BezierPatchIntersection::ComputeEpsilon(Ray const & r, float eps) const
 }
 
 
-bool BezierPatchIntersection::testInternal(Intersection* info, const Ray& r, float tmin, float tmax)
+bool BezierPatchIntersection::testInternal(Intersection &info, const Ray& r, float tmin, float tmax)
 {
     float4x4 mat = RayTransform(r.org, r.dir); // getZAlign
 
@@ -636,26 +635,17 @@ bool BezierPatchIntersection::testInternal(Intersection* info, const Ray& r, flo
     uvt.failFlag = 0;
     {
         BezierPatch patch(m_patch, mat);
-        if (testBezierPatch(&uvt, patch, tmin, tmax, m_eps)) {
+        if (testBezierPatch(uvt, patch, tmin, tmax, m_eps)) {
             float t = uvt.t;
             float u = uvt.u;
             float v = uvt.v;
 
             u = m_uRange[0] * (1 - u) + m_uRange[1] * u;//global
             v = m_vRange[0] * (1 - v) + m_vRange[1] * v;//global
-            info->t = t;
-            info->u = u;
-            info->v = v;
-            info->clipLevel = uvt.level;
-            {
-                float3 du = m_patch.EvaluateDu(float2(u, v));
-                float3 dv = m_patch.EvaluateDv(float2(u, v));
-                float3 normal = normalize(cross(du, dv));
-                info->normal = normal;
-                info->geometricNormal = normal;
-                //  info->tangent  = Conv(U);
-                //  info->binormal = Conv(V);
-            }
+            info.t = t;
+            info.u = u;
+            info.v = v;
+            info.clip_level = uvt.level;
             tmax = t;
             bRet = true;
             trace("hit t = %f, uv = (%f, %f)\n", t, u, v);
@@ -685,15 +675,15 @@ bool BezierPatchIntersection::testInternal(Intersection* info, const Ray& r, flo
         };
         BezierPatch tmp[2];
         BezierPatch children[4];
-        m_patch.SplitU(tmp, 0.5);
-        tmp[0].SplitV(&children[0], 0.5);
-        tmp[1].SplitV(&children[2], 0.5);
+        m_patch.SplitU(tmp, 0.5f);
+        tmp[0].SplitV(&children[0], 0.5f);
+        tmp[1].SplitV(&children[2], 0.5f);
 
         int ni = -1;
         for (int i = 0; i < 4; ++i) {
             children[i].Transform(mat);
             trace("Child pass %d\n", i);
-            if (testBezierPatch(&uvt, children[i], tmin, tmax, m_eps)) {
+            if (testBezierPatch(uvt, children[i], tmin, tmax, m_eps)) {
                 float t = uvt.t;
                 tmax = t;
                 ni = i;
@@ -703,22 +693,15 @@ bool BezierPatchIntersection::testInternal(Intersection* info, const Ray& r, flo
         if (0 <= ni) {
             int i = ni;
             float t = uvt.t;
-            float u = uvt.u * 0.5 + offsets[2 * i + 0];
-            float v = uvt.v * 0.5 + offsets[2 * i + 1];
+            float u = uvt.u * 0.5f + offsets[2 * i + 0];
+            float v = uvt.v * 0.5f + offsets[2 * i + 1];
 
-            u = m_uRange[0] * (1 - u) + m_uRange[1] * u;//global
-            v = m_vRange[0] * (1 - v) + m_vRange[1] * v;//global
-            info->t = t;
-            info->u = u;
-            info->v = v;
-            info->clipLevel = uvt.level;
-            {
-                float3 du = m_patch.EvaluateDu(float2(u, v));
-                float3 dv = m_patch.EvaluateDv(float2(u, v));
-                float3 normal = normalize(cross(du, dv));
-                info->normal = normal;
-                info->geometricNormal = normal;
-            }
+            u = m_uRange[0] * (1.0f - u) + m_uRange[1] * u;//global
+            v = m_vRange[0] * (1.0f - v) + m_vRange[1] * v;//global
+            info.t = t;
+            info.u = u;
+            info.v = v;
+            info.clip_level = uvt.level;
             bRet = true;
             trace("hit t = %f, uv = (%f, %f)\n", t, u, v);
         }
@@ -727,7 +710,7 @@ bool BezierPatchIntersection::testInternal(Intersection* info, const Ray& r, flo
     return bRet;
 }
 
-bool BezierPatchIntersection::testBezierPatch(UVT* info, BezierPatch const & patch, float zmin, float zmax, float eps)
+bool BezierPatchIntersection::testBezierPatch(UVT& info, const BezierPatch& patch, float zmin, float zmax, float eps)
 {
     float3 min, max;
     patch.GetMinMax(min, max, 1e-3f);
@@ -742,7 +725,7 @@ bool BezierPatchIntersection::testBezierPatch(UVT* info, BezierPatch const & pat
 
 
 
-bool BezierPatchIntersection::testBezierClipU(UVT* info, BezierPatch const & patch,
+bool BezierPatchIntersection::testBezierClipU(UVT& info, const BezierPatch & patch,
     float u0, float u1, float v0, float v1,
     float zmin, float zmax,
     int level, int max_level, float eps)
@@ -808,7 +791,7 @@ bool BezierPatchIntersection::testBezierClipU(UVT* info, BezierPatch const & pat
             for (int i = 0; i < 2; ++i) {
                 if (testBezierClipV(info, tmp[order[i]], ut[2 * order[i]], ut[2 * order[i] + 1],
                     v0, v1, zmin, zmax, level + 1, max_level, eps)) {
-                    zmax = info->t;
+                    zmax = info.t;
                     bRet = true;
                 }
             }
@@ -827,9 +810,10 @@ bool BezierPatchIntersection::testBezierClipU(UVT* info, BezierPatch const & pat
     return false;
 }
 
-bool BezierPatchIntersection::testBezierClipV(UVT *info, const BezierPatch& patch,
+bool BezierPatchIntersection::testBezierClipV(UVT& info, const BezierPatch& patch,
     float u0, float u1, float v0, float v1, float zmin, float zmax,
-    int level, int max_level, float eps) {
+    int level, int max_level, float eps)
+{
     BezierPatch tpatch(patch);
     RotateV(tpatch);
 
@@ -895,7 +879,7 @@ bool BezierPatchIntersection::testBezierClipV(UVT *info, const BezierPatch& patc
                 if (testBezierClipU(info, tmp[order[i]], u0, u1,
                     vt[2 * order[i]], vt[2 * order[i] + 1],
                     zmin, zmax, level + 1, max_level, eps)) {
-                    zmax = info->t;
+                    zmax = info.t;
                     bRet = true;
                 }
             }
@@ -914,7 +898,7 @@ bool BezierPatchIntersection::testBezierClipV(UVT *info, const BezierPatch& patc
     return false;
 }
 
-bool BezierPatchIntersection::testBezierClipL(UVT* info, const BezierPatch& patch,
+bool BezierPatchIntersection::testBezierClipL(UVT& info, const BezierPatch& patch,
     float u0, float u1, float v0, float v1,
     float zmin, float zmax, int level)
 {
@@ -933,10 +917,10 @@ bool BezierPatchIntersection::testBezierClipL(UVT* info, const BezierPatch& patc
             if (TestBilinearPatch(&t, &u, &v, P, zmin, zmax, m_uvMargin)) {
                 u = u0*(1 - u) + u1*u;
                 v = v0*(1 - v) + v1*v;
-                info->u = u;
-                info->v = v;
-                info->t = t;
-                info->level = level;
+                info.u = u;
+                info.v = v;
+                info.t = t;
+                info.level = level;
                 return true;
             }
         }
@@ -944,10 +928,10 @@ bool BezierPatchIntersection::testBezierClipL(UVT* info, const BezierPatch& patc
             if (TestQuadPlane(&t, &u, &v, P, float3(0.0f), float3(0.0f, 0.0f, 1.0f), zmin, zmax)) {
                 u = u0*(1 - u) + u1*u;
                 v = v0*(1 - v) + v1*v;
-                info->u = u;
-                info->v = v;
-                info->t = t;
-                info->level = level;
+                info.u = u;
+                info.v = v;
+                info.t = t;
+                info.level = level;
                 return true;
             }
         }
@@ -956,7 +940,7 @@ bool BezierPatchIntersection::testBezierClipL(UVT* info, const BezierPatch& patc
             | ((v0 == float(0)) << 2)
             | ((v1 == float(1)) << 3);
 
-        info->failFlag |= failFlag;
+        info.failFlag |= failFlag;
         return false;
     }
 
@@ -991,10 +975,10 @@ bool BezierPatchIntersection::testBezierClipL(UVT* info, const BezierPatch& patc
                     u = Lerp(u0, u1, u);
                     v = Lerp(v0, v1, v);
 
-                    info->u = u;
-                    info->v = v;
-                    info->t = t;
-                    info->level = level;
+                    info.u = u;
+                    info.v = v;
+                    info.t = t;
+                    info.level = level;
                     bRet = true;
                 }
             }
@@ -1011,10 +995,10 @@ bool BezierPatchIntersection::testBezierClipL(UVT* info, const BezierPatch& patc
                     u = Lerp(u0, u1, u);
                     v = Lerp(v0, v1, v);
 
-                    info->u = u;
-                    info->v = v;
-                    info->t = t;
-                    info->level = level;
+                    info.u = u;
+                    info.v = v;
+                    info.t = t;
+                    info.level = level;
                     bRet = true;
                 }
             }
@@ -1023,7 +1007,7 @@ bool BezierPatchIntersection::testBezierClipL(UVT* info, const BezierPatch& patc
 
     if (bRet) {
         float3 p = patch.Evaluate(float2(uu, vv));
-        info->t = p[2];
+        info.t = p[2];
     }
     else {
         int failFlag = ((u0 == float(0)) << 0)
@@ -1031,12 +1015,12 @@ bool BezierPatchIntersection::testBezierClipL(UVT* info, const BezierPatch& patc
             | ((v0 == float(0)) << 2)
             | ((v1 == float(1)) << 3);
 
-        info->failFlag |= failFlag;
+        info.failFlag |= failFlag;
     }
     return bRet;
 }
 
-bool BezierPatchIntersection::testBezierClipRangeU(UVT* info, const BezierPatch& patch,
+bool BezierPatchIntersection::testBezierClipRangeU(UVT& info, const BezierPatch& patch,
     float u0, float u1,
     float v0, float v1, float zmin, float zmax,
     int level, int max_level, float eps)
@@ -1089,7 +1073,7 @@ bool BezierPatchIntersection::testBezierClipRangeU(UVT* info, const BezierPatch&
             for (int i = 0; i < 2; ++i) {
                 if (testBezierClipRangeV(info, patch, ut[2 * order[i]], ut[2 * order[i] + 1],
                     v0, v1, zmin, zmax, level + 1, max_level, eps)) {
-                    zmax = info->t;
+                    zmax = info.t;
                     bRet = true;
                 }
             }
@@ -1106,7 +1090,7 @@ bool BezierPatchIntersection::testBezierClipRangeU(UVT* info, const BezierPatch&
     return false;
 }
 
-bool BezierPatchIntersection::testBezierClipRangeV(UVT *info, const BezierPatch& patch,
+bool BezierPatchIntersection::testBezierClipRangeV(UVT& info, const BezierPatch& patch,
     float u0, float u1, float v0, float v1, float zmin, float zmax,
     int level, int max_level, float eps)
 {
@@ -1158,7 +1142,7 @@ bool BezierPatchIntersection::testBezierClipRangeV(UVT *info, const BezierPatch&
                 if (testBezierClipRangeU(info, patch, u0, u1,
                     vt[2 * order[i]], vt[2 * order[i] + 1],
                     zmin, zmax, level + 1, max_level, eps)) {
-                    zmax = info->t;
+                    zmax = info.t;
                     bRet = true;
                 }
             }
@@ -1175,9 +1159,8 @@ bool BezierPatchIntersection::testBezierClipRangeV(UVT *info, const BezierPatch&
     return false;
 }
 
-template<typename Ray>
-bool BezierPatchIntersection::intersectAABB(RangeAABB *rng, float3 const & min, float3 const & max,
-    Ray const & r, float tmin, float tmax) const
+bool BezierPatchIntersection::intersectAABB(RangeAABB& rng, float3 const & min, float3 const & max,
+    const Ray & r, float tmin, float tmax) const
 {
     int sign[3] = { r.dirSign[0], r.dirSign[1], r.dirSign[2] };
     float3 box[2] = { min, max };
@@ -1189,8 +1172,8 @@ bool BezierPatchIntersection::intersectAABB(RangeAABB *rng, float3 const & min, 
         tmin = std::max(tmin, (box[sign[i]][i] - org[i])*idir[i]);
         tmax = std::min(tmax, (box[1 - sign[i]][i] - org[i])*idir[i]);
     }
-    rng->tmin = tmin;
-    rng->tmax = tmax;
+    rng.tmin = tmin;
+    rng.tmax = tmax;
 
-    return rng->tmin <= rng->tmax;
+    return rng.tmin <= rng.tmax;
 }

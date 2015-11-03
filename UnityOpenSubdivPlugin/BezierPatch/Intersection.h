@@ -30,29 +30,7 @@ struct Intersection
     float t;
     float u;
     float v;
-    uint32_t faceID;
-    uint32_t matID;
-
-    // patch info
-    uint32_t patchID;
-    uint32_t level;
-    uint32_t clipLevel;
-
-    // for measurements
-    float eps;
-    uint32_t maxLevel;
-
-    // triangle
-    uint32_t f0;
-    uint32_t f1;
-    uint32_t f2;
-
-    float3 position;
-    float3 geometricNormal;
-    float3 normal;
-    float3 tangent;
-    float3 binormal;
-    float2 texcoord;
+    uint32_t clip_level;
 };
 
 class BezierPatchIntersection
@@ -85,41 +63,40 @@ public:
     void SetDirectBilinear(bool directBilinear);
     void SetWatertightFlag(int wcpFlag);
 
-    bool Test(Intersection* info, const Ray& r, float tmin, float tmax);
+    bool Test(Intersection &info, const Ray& r, float tmin, float tmax);
     float ComputeEpsilon(Ray const & r, float eps) const;
 
 protected:
-    bool testInternal(Intersection* info, const Ray& r, float tmin, float tmax);
-    bool testBezierPatch(UVT* info, BezierPatch const & patch, float zmin, float zmax, float eps);
+    bool testInternal(Intersection& info, const Ray& r, float tmin, float tmax);
+    bool testBezierPatch(UVT& info, BezierPatch const & patch, float zmin, float zmax, float eps);
 
 
-    bool testBezierClipU(UVT* info, BezierPatch const & patch,
+    bool testBezierClipU(UVT& info, BezierPatch const & patch,
         float u0, float u1, float v0, float v1,
         float zmin, float zmax,
         int level, int max_level, float eps);
 
-    bool testBezierClipV(UVT *info, const BezierPatch& patch,
+    bool testBezierClipV(UVT& info, const BezierPatch& patch,
         float u0, float u1, float v0, float v1, float zmin, float zmax,
         int level, int max_level, float eps);
 
-    bool testBezierClipL(UVT* info, const BezierPatch& patch,
+    bool testBezierClipL(UVT& info, const BezierPatch& patch,
         float u0, float u1, float v0, float v1,
         float zmin, float zmax, int level);
 
-    bool testBezierClipRangeU(UVT* info, const BezierPatch& patch,
+    bool testBezierClipRangeU(UVT& info, const BezierPatch& patch,
         float u0, float u1,
         float v0, float v1, float zmin, float zmax,
         int level, int max_level, float eps);
 
-    bool testBezierClipRangeV(UVT *info, const BezierPatch& patch,
+    bool testBezierClipRangeV(UVT& info, const BezierPatch& patch,
         float u0, float u1, float v0, float v1, float zmin, float zmax,
         int level, int max_level, float eps);
 
-    template<typename Ray>
-    bool intersectAABB(RangeAABB *rng, float3 const & min, float3 const & max,
-        Ray const & r, float tmin, float tmax) const;
+    bool intersectAABB(RangeAABB& rng, const float3& min, const float3 & max,
+        const Ray & r, float tmin, float tmax) const;
 
-    BezierPatch m_patch;
+    const BezierPatch &m_patch;
     float m_uRange[2];
     float m_vRange[2];
     float3 m_min;
