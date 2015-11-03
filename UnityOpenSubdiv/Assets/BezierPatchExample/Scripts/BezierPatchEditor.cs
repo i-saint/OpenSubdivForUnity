@@ -11,8 +11,8 @@ public class BezierPatchEditor : MonoBehaviour
     public BezierPatch m_bpatch = new BezierPatch();
     public bool m_lock;
     public bool m_preview_mesh = true;
-    Transform[] m_cpobj;
-    Mesh m_mesh;
+    [HideInInspector] [SerializeField] Transform[] m_cpobj;
+    [HideInInspector] [SerializeField] Mesh m_mesh;
     ComputeBuffer m_cb;
 
 
