@@ -6,7 +6,7 @@
 
 struct Ray
 {
-    float3 org;
+    float3 orig;
     float3 dir;
 };
 

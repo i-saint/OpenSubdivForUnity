@@ -3,11 +3,6 @@
 
 
 
-
-
-
-
-
 BezierPatch::BezierPatch()
 {
 }
@@ -211,62 +206,6 @@ float3 BezierPatch::GetLu() const
 
 
 
-template<int N, int k>
-struct Binomial
-{
-    const static int value = (Binomial<N - 1, k - 1>::value + Binomial<N - 1, k>::value);
-};
-
-template<>
-struct Binomial<0, 0>
-{
-    const static int value = 1;
-};
-template<int N>
-struct Binomial<N, 0>
-{
-    const static int value = 1;
-};
-template<int N>
-struct Binomial<N, N>
-{
-    const static int value = 1;
-};
-
-template<int N, int k>
-inline int binomial()
-{
-    return Binomial<N, k>::value;
-}
-
-
-template<int N, int I>
-inline float bernstein(float t)
-{
-    return float(binomial<N, I>() * std::pow(1.0f - t, N - I) * std::pow(t, I));
-}
-
-template<int N, int I>
-struct BezierCurveEvaluate
-{
-    static float3 evaluate(const float t, const float3 *const cp)
-    {
-        return cp[I] * bernstein<N, I>(t) +
-            BezierCurveEvaluate<N, I - 1>::evaluate(t, cp);
-    }
-};
-
-template<int N>
-struct BezierCurveEvaluate<N, 0>
-{
-    static float3 evaluate(const float t, const float3 *const cp)
-    {
-        return cp[0] * bernstein<N, 0>(t);
-    }
-};
-
-
-
 template <int N, int I, int STRIDE>
 struct BezierSplit
 {
@@ -276,8 +215,8 @@ struct BezierSplit
         a[I*STRIDE] = p[0];
         b[tn*STRIDE] = p[tn*STRIDE];
         float3 tmp[(N - 1)*STRIDE];
-        float s = 1 - t;
-        t = 1 - s;
+        float s = 1.0f - t;
+        t = 1.0f - s;
         for (int j = 0; j < tn; j++) {
             tmp[j*STRIDE] = s*p[j*STRIDE] + t*p[(j + 1)*STRIDE];
         }
@@ -355,8 +294,6 @@ void BezierPatch::bezierCropV(float3 r[], const float3 p[], float s, float t) co
 
 float3 BezierPatch::evaluate(float t, const float3 *cp)
 {
-    //return BezierCurveEvaluate<N - 1, N - 1>::evaluate(t, cp);
-
     float it = 1.0f - t;
     return cp[0] * (       (it*it*it)          )
          + cp[1] * (3.0f * (it*it   ) * (t)    )
@@ -378,6 +315,13 @@ float3 BezierPatch::evaluateD(float t, const float3 *cp)
 
 void BezierPatch::Transpose()
 {
+    //std::swap(m_cp[1 * N + 0], m_cp[0 * N + 1]);
+    //std::swap(m_cp[2 * N + 0], m_cp[0 * N + 2]);
+    //std::swap(m_cp[3 * N + 0], m_cp[0 * N + 3]);
+    //std::swap(m_cp[2 * N + 1], m_cp[1 * N + 2]);
+    //std::swap(m_cp[3 * N + 1], m_cp[1 * N + 3]);
+    //std::swap(m_cp[3 * N + 2], m_cp[2 * N + 3]);
+
     for (int y = 0; y < N; ++y) {
         for (int x = y + 1; x < N; ++x) {
             std::swap(m_cp[x*N + y], m_cp[y*N + x]);

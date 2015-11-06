@@ -138,7 +138,7 @@ public class BezierPatchEditor : MonoBehaviour
             ConstructControlPoints();
             for (int i = 0; i < m_bpatch.cp.Length; ++i)
             {
-                m_bpatch.cp[i] = m_cpobj[i].position;
+                m_bpatch.cp[i] = m_cpobj[i].localPosition;
             }
             UpdatePreviewMesh();
         }
@@ -153,14 +153,14 @@ public class BezierPatchEditor : MonoBehaviour
         {
             for (int x = 0; x < 3; ++x)
             {
-                Gizmos.DrawLine(cp[y*4 + x], cp[y*4 + x+1]);
+                Gizmos.DrawLine(m_cpobj[y*4 + x].position, m_cpobj[y*4 + x+1].position);
             }
         }
         for (int y = 0; y < 3; ++y)
         {
             for (int x = 0; x < 4; ++x)
             {
-                Gizmos.DrawLine(cp[y * 4 + x], cp[(y+1) * 4 + x]);
+                Gizmos.DrawLine(m_cpobj[y * 4 + x].position, m_cpobj[(y+1) * 4 + x].position);
             }
         }
     }

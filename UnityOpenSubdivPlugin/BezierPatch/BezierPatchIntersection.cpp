@@ -170,8 +170,8 @@ bool IsClip(int level)
 
 float Lerp(float a, float b, float u)
 {
-    float t = float(1) - (float(1) - u);
-    float s = float(1) - t;
+    float t = 1.0f - (1.0f - u);
+    float s = 1.0f - t;
     return s*a + t*b;
 }
 
@@ -623,7 +623,6 @@ BezierPatchIntersectionImpl::BezierPatchIntersectionImpl(const BezierPatch &patc
     m_directBilinear(false),
     m_wcpFlag(0)
 {
-
     m_uRange[0] = m_vRange[0] = 0;
     m_uRange[1] = m_vRange[1] = 1;
 
@@ -678,7 +677,7 @@ bool BezierPatchIntersectionImpl::Test(BezierPatchHit& info, const Ray& r, float
 
 bool BezierPatchIntersectionImpl::testInternal(BezierPatchHit& info, const Ray& r, float tmin, float tmax)
 {
-    float4x4 mat = RayTransform(r.org, r.dir); // getZAlign
+    float4x4 mat = RayTransform(r.orig, r.dir); // getZAlign
     BezierPatch patch(m_patch, mat);
 
     bool bRet = false;
@@ -690,8 +689,8 @@ bool BezierPatchIntersectionImpl::testInternal(BezierPatchHit& info, const Ray& 
             float u = uvt.u;
             float v = uvt.v;
 
-            u = m_uRange[0] * (1 - u) + m_uRange[1] * u;//global
-            v = m_vRange[0] * (1 - v) + m_vRange[1] * v;//global
+            u = m_uRange[0] * (1.0f - u) + m_uRange[1] * u;//global
+            v = m_vRange[0] * (1.0f - v) + m_vRange[1] * v;//global
             info.t = t;
             info.uv.x = u;
             info.uv.y = v;
@@ -718,10 +717,10 @@ bool BezierPatchIntersectionImpl::testInternal(BezierPatchHit& info, const Ray& 
         v---->
         */
         static const float offsets[8] = {
-            0.0f,0.0f,
-            0.0f,0.5f,
-            0.5f,0.0f,
-            0.5f,0.5f
+            0.0f, 0.0f,
+            0.0f, 0.5f,
+            0.5f, 0.0f,
+            0.5f, 0.5f
         };
         BezierPatch tmp[2];
         BezierPatch children[4];
