@@ -48,18 +48,18 @@ uosCLinkage uosExport void uosDestroyContext(uosContext* ctx)
 
 
 
-uosCLinkage uosExport cfloat3 BezierPatchEvaluate(const BezierPatch *bp, const float2 *uv)
+uosCLinkage uosExport cfloat3 uosBezierPatchEvaluate(const BezierPatch *bp, const float2 *uv)
 {
     return (cfloat3&)bp->Evaluate(*uv);
 }
 
-uosCLinkage uosExport cfloat3 BezierPatchEvaluateNormal(const BezierPatch *bp, const float2 *uv)
+uosCLinkage uosExport cfloat3 uosBezierPatchEvaluateNormal(const BezierPatch *bp, const float2 *uv)
 {
     return (cfloat3&)bp->EvaluateNormal(*uv);
 }
 
-uosCLinkage uosExport bool BezierPatchRayIntersection(const BezierPatch *bp, const Ray *ray, BezierPatchHit *hit)
+uosCLinkage uosExport bool uosBezierPatchRaycast(const BezierPatch *bp, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit)
 {
-    BezierPatchIntersectionImpl impl(*bp);
-    return impl.Test(*hit, *ray, FLT_MIN, FLT_MAX);
+    Ray ray = {*orig, *dir};
+    return BezierPatchRaycast(*bp, ray, max_distance, *hit);
 }

@@ -19,6 +19,15 @@ namespace Ist
             cp30, cp31, cp32, cp33;
     }
 
+    public struct BezierPatchHit
+    {
+        float t;
+        float u;
+        float v;
+        uint clip_level;
+    };
+
+
 
     [System.Serializable]
     public class BezierPatch
@@ -28,16 +37,26 @@ namespace Ist
 
         public Vector3 Evaluate(Vector2 uv)
         {
-            return BezierPatchEvaluate(ref cp[0], ref uv);
+            return uosBezierPatchEvaluate(ref cp[0], ref uv);
         }
 
         public Vector3 EvaluateNormal(Vector2 uv)
         {
-            return BezierPatchEvaluateNormal(ref cp[0], ref uv);
+            return uosBezierPatchEvaluateNormal(ref cp[0], ref uv);
+        }
+
+        public bool Raycast(Vector3 orig, Vector3 dir, ref BezierPatchHit hit)
+        {
+            return Raycast(orig, dir, Mathf.Infinity, ref hit);
+        }
+
+        public bool Raycast(Vector3 orig, Vector3 dir, float max_distance, ref BezierPatchHit hit)
+        {
+            return uosBezierPatchRaycast(ref cp[0], ref orig, ref dir, max_distance, ref hit);
         }
 
 
-
+        #region impl
         static Vector3[] DefaultControlPoints()
         {
             var cp = new Vector3[16];
@@ -52,9 +71,15 @@ namespace Ist
             return cp;
         }
 
+
         [DllImport("UnityOpenSubdiv")]
-        static extern Vector3 BezierPatchEvaluate(ref Vector3 cps, ref Vector2 uv);
+        static extern Vector3 uosBezierPatchEvaluate(ref Vector3 bpatch, ref Vector2 uv);
+
         [DllImport("UnityOpenSubdiv")]
-        static extern Vector3 BezierPatchEvaluateNormal(ref Vector3 cps, ref Vector2 uv);
+        static extern Vector3 uosBezierPatchEvaluateNormal(ref Vector3 bpatch, ref Vector2 uv);
+
+        [DllImport("UnityOpenSubdiv")]
+        static extern bool uosBezierPatchRaycast(ref Vector3 bpatch, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
+        #endregion
     }
 }
