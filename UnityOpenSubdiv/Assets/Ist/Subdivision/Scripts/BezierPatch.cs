@@ -21,10 +21,9 @@ namespace Ist
 
     public struct BezierPatchHit
     {
-        float t;
-        float u;
-        float v;
-        uint clip_level;
+        public Vector2 uv;
+        public float t;
+        public uint clip_level;
     };
 
 

@@ -8,13 +8,14 @@ using Ist;
 [ExecuteInEditMode]
 public class BezierPatchEditor : MonoBehaviour
 {
-    public BezierPatch m_bpatch = new BezierPatch();
-    public bool m_lock;
-    public bool m_preview_mesh = true;
+    [SerializeField] BezierPatch m_bpatch = new BezierPatch();
+    [SerializeField] bool m_lock;
+    [SerializeField] bool m_preview_mesh = true;
     [HideInInspector] [SerializeField] Transform[] m_cpobj;
     [HideInInspector] [SerializeField] Mesh m_mesh;
     ComputeBuffer m_cb;
 
+    public BezierPatch bpatch { get { return m_bpatch; } }
 
     public void UpdatePreviewMesh()
     {
