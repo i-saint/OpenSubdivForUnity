@@ -9,7 +9,7 @@ public class BezierPatchRaycaster : MonoBehaviour
 
     void OnDrawGizmos()
     {
-        float max_distance = 10.0f;
+        float max_distance = 5.0f;
 
         Gizmos.color = Color.red;
         var pos = transform.position;
@@ -23,7 +23,7 @@ public class BezierPatchRaycaster : MonoBehaviour
             {
                 var hit_pos = pos + dir * hit.t;
                 //var hit_pos = m_bpatch.bpatch.Evaluate(hit.uv); // same as above
-                Gizmos.DrawWireSphere(hit_pos, 0.1f);
+                Gizmos.DrawWireSphere(hit_pos, 0.05f);
             }
         }
     }
