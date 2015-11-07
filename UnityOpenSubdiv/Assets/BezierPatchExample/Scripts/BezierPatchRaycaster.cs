@@ -27,4 +27,27 @@ public class BezierPatchRaycaster : MonoBehaviour
             }
         }
     }
+
+    // for debug
+    /*
+    void Raycast()
+    {
+        if (m_bpatch != null)
+        {
+            var pos = transform.position;
+            var dir = transform.forward;
+            float max_distance = 10.0f;
+            BezierPatchHit hit = default(BezierPatchHit);
+            bool ret = m_bpatch.bpatch.Raycast(pos, dir, max_distance, ref hit);
+        }
+    }
+
+    void OnGUI()
+    {
+        if (GUI.Button(new Rect(10, 10, 150, 30), "Raycast"))
+        {
+            Raycast();
+        }
+    }
+    */
 }
