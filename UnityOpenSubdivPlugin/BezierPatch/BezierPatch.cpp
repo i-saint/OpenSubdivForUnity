@@ -219,6 +219,7 @@ struct BezierSplit
         t = 1.0f - s;
         for (int j = 0; j < tn; j++) {
             tmp[j*STRIDE] = s*p[j*STRIDE] + t*p[(j + 1)*STRIDE];
+            //tmp[j*STRIDE] = glm::mix(p[j*STRIDE], p[(j + 1)*STRIDE], t);
         }
         BezierSplit<N, I + 1, STRIDE>(a, b, &tmp[0], t);
     }
@@ -273,6 +274,19 @@ struct BezierCrop<4, STRIDE>
 
 void BezierPatch::bezierSplit(float3 a[], float3 b[], const float3 p[], float t) const
 {
+    //{
+    //    const int tn = N - 1;
+    //    float3 tmp[tn];
+    //    a[0] = p[0];
+    //    b[tn] = p[tn];
+    //    float s = 1.0f - t;
+    //    t = 1.0f - s;
+    //    for (int j = 0; j < tn; j++) {
+    //        tmp[j] = s * p[j] + t * p[j + 1];
+    //    }
+    //    BezierSplit<N, I + 1, STRIDE>(a, b, &tmp[0], t);
+    //}
+
     BezierSplit<N, 0, 1> split(a, b, p, t);
 }
 
@@ -315,18 +329,12 @@ float3 BezierPatch::evaluateD(float t, const float3 *cp)
 
 void BezierPatch::Transpose()
 {
-    //std::swap(m_cp[1 * N + 0], m_cp[0 * N + 1]);
-    //std::swap(m_cp[2 * N + 0], m_cp[0 * N + 2]);
-    //std::swap(m_cp[3 * N + 0], m_cp[0 * N + 3]);
-    //std::swap(m_cp[2 * N + 1], m_cp[1 * N + 2]);
-    //std::swap(m_cp[3 * N + 1], m_cp[1 * N + 3]);
-    //std::swap(m_cp[3 * N + 2], m_cp[2 * N + 3]);
-
-    for (int y = 0; y < N; ++y) {
-        for (int x = y + 1; x < N; ++x) {
-            std::swap(m_cp[x*N + y], m_cp[y*N + x]);
-        }
-    }
+    std::swap(m_cp[1 * N + 0], m_cp[0 * N + 1]);
+    std::swap(m_cp[2 * N + 0], m_cp[0 * N + 2]);
+    std::swap(m_cp[3 * N + 0], m_cp[0 * N + 3]);
+    std::swap(m_cp[2 * N + 1], m_cp[1 * N + 2]);
+    std::swap(m_cp[3 * N + 1], m_cp[1 * N + 3]);
+    std::swap(m_cp[3 * N + 2], m_cp[2 * N + 3]);
 }
 
 void BezierPatch::Transform(const float3x3 &m)

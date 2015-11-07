@@ -21,9 +21,9 @@ public class BezierPatchRaycaster : MonoBehaviour
             BezierPatchHit hit = default(BezierPatchHit);
             if(m_bpatch.bpatch.Raycast(pos, dir, max_distance, ref hit))
             {
-                //var hit_pos = pos + dir * hit.t;
-                var hit_pos = m_bpatch.bpatch.Evaluate(hit.uv);
-                Gizmos.DrawWireCube(hit_pos, Vector3.one*0.1f);
+                var hit_pos = pos + dir * hit.t;
+                //var hit_pos = m_bpatch.bpatch.Evaluate(hit.uv); // same as above
+                Gizmos.DrawWireSphere(hit_pos, 0.1f);
             }
         }
     }

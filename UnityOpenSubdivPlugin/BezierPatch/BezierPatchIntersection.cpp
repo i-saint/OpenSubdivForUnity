@@ -95,18 +95,18 @@ float3x3 Rotate2D(const float3 &dx)
 }
 
 
-float4x4 RayTransform(const float3& pos, const float3& dir)
+float4x4 RayTransform(const float3& p, const float3& dir)
 {
     float3 z = dir;
     int plane = 0;
     if (fabs(z[1]) < fabs(z[plane])) plane = 1;
     if (fabs(z[2]) < fabs(z[plane])) plane = 2;
 
-    float3 x = (plane == 0) ? float3(1.0f, 0.0f, 0.0f) :
-        ((plane == 1) ? float3(0.0f, 1.0f, 0.0f) :
-            float3(0.0f, 0.0f, 1.0f));
-    float3 y = normalize(cross(z, x));
-    x = cross(y, z);
+    float3 up = (plane == 0) ? float3(1.0f, 0.0f, 0.0f) :
+               ((plane == 1) ? float3(0.0f, 1.0f, 0.0f) :
+                               float3(0.0f, 0.0f, 1.0f));
+    float3 y = normalize(cross(z, up));
+    float3 x = cross(y, z);
 
     float4x4 rot = float4x4(
         x[0], y[0], z[0], 0.0f,
@@ -114,11 +114,11 @@ float4x4 RayTransform(const float3& pos, const float3& dir)
         x[2], y[2], z[2], 0.0f,
         0.0f, 0.0f, 0.0f, 1.0f);
     float4x4 trs = float4x4(
-        1.0f,   0.0f,   0.0f, 0.0f,
-        0.0f,   1.0f,   0.0f, 0.0f,
-        0.0f,   0.0f,   1.0f, 0.0f,
-     -pos[0],-pos[1],-pos[2], 1.0f);
-    return rot*trs;
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+       -p[0],-p[1],-p[2], 1.0f);
+    return rot * trs;
 }
 
 
@@ -158,21 +158,8 @@ bool IsClip(int level)
         3,3,3,3,//8
         4,4,4,4,4,4,4,4,//16
     };
-    int nlevel = 0;
-    if (N <= 16) {
-        nlevel = div_level[N];
-    }
-    else {
-        nlevel = (int)ceil(log2(N));
-    }
+    int nlevel = div_level[N];
     return nlevel * 2 <= level;
-}
-
-float Lerp(float a, float b, float u)
-{
-    float t = 1.0f - (1.0f - u);
-    float s = 1.0f - t;
-    return s*a + t*b;
 }
 
 static void CoarseSort(int order[2], BezierPatch tmp[2])
@@ -203,6 +190,7 @@ struct Curve
     static const int LENGTH = 4;
     float2 operator[](int i) const { return v[i]; }
     float2 &operator[](int i) { return v[i]; }
+
     float2 v[LENGTH];
 };
 
@@ -217,21 +205,19 @@ bool ScanMinMax(const Curve& p)
     return false;
 }
 
-template<typename T>
-T Slope(T const a[], T const b[])
+float Slope(const float2& a, const float2& b)
 {
-    T d0 = b[0] - a[0];
-    T d1 = b[1] - a[1];
+    float d0 = b.x - a.x;
+    float d1 = b.y - a.y;
     return fabs(d0 / d1);
 }
 
-template<typename T>
-T Dist(T const p0[], T const p1[])
+float Dist(const float2 &p0, const float2& p1)
 {
-    T a = fabs(p0[1]);
-    T b = fabs(p1[1]);
-    T h = a + b;
-    T t = p0[0] + a*(p1[0] - p0[0]) / h;
+    float a = fabs(p0.y);
+    float b = fabs(p1.y);
+    float h = a + b;
+    float t = p0.x + a*(p1.x - p0.x) / h;
     return t;
 }
 
@@ -247,7 +233,7 @@ int ScanConvex(float ts[], const Curve & p)
         float current = std::numeric_limits<float>::max();
         for (int i = 1; i < Curve::LENGTH; ++i) {
             if (p[i][1] * p[0][1] < 0) {
-                float s = Slope(&p[i][0], &p[0][0]);
+                float s = Slope(p[i], p[0]);
                 if (s < current) {
                     current = s;
                     k = i;
@@ -258,7 +244,7 @@ int ScanConvex(float ts[], const Curve & p)
             current = 0;
             for (int i = 0; i < k; ++i) {
                 if (p[i][1] * p[k][1] < 0) {
-                    float s = Slope(&p[i][0], &p[k][0]);
+                    float s = Slope(p[i], p[k]);
                     if (current < s) {
                         current = s;
                         l = i;
@@ -266,7 +252,7 @@ int ScanConvex(float ts[], const Curve & p)
                 }
             }
             if (l >= 0) {
-                ts[n++] = Dist(&p[l][0], &p[k][0]);
+                ts[n++] = Dist(p[l], p[k]);
             }
         }
     }
@@ -276,7 +262,7 @@ int ScanConvex(float ts[], const Curve & p)
         float current = std::numeric_limits<float>::max();
         for (int i = 0; i < Curve::LENGTH - 1; ++i) {
             if (p[i][1] * p[Curve::LENGTH - 1][1] < 0) {
-                float s = Slope(&p[i][0], &p[Curve::LENGTH - 1][0]);
+                float s = Slope(p[i], p[Curve::LENGTH - 1]);
                 if (s < current) {
                     current = s;
                     k = i;
@@ -287,7 +273,7 @@ int ScanConvex(float ts[], const Curve & p)
             current = 0;
             for (int i = k + 1; i < Curve::LENGTH; ++i) {
                 if (p[i][1] * p[k][1] < 0) {
-                    float s = Slope(&p[i][0], &p[k][0]);
+                    float s = Slope(p[i], p[k]);
                     if (current < s) {
                         current = s;
                         l = i;
@@ -295,7 +281,7 @@ int ScanConvex(float ts[], const Curve & p)
                 }
             }
             if (l >= 0) {
-                ts[n++] = Dist(&p[k][0], &p[l][0]);
+                ts[n++] = Dist(p[k], p[l]);
             }
         }
     }
@@ -322,7 +308,7 @@ bool XCheck(float rng[2], const Curve& curve)
     return false;
 }
 
-bool GetRangeU(float out[2], BezierPatch const & patch)
+bool GetRangeU(float out[2], const BezierPatch& patch)
 {
     float t0 = 1;
     float t1 = 0;
@@ -377,8 +363,8 @@ bool GetRangeV(float out[2], const BezierPatch& patch)
 }
 
 
-template<class T>
-static bool SolveBilinearPatch(T* t, T* u, T* v, T tmin, T tmax, T tt, T uu, T vv) {
+static bool SolveBilinearPatch(float* t, float* u, float* v, float tmin, float tmax, float tt, float uu, float vv)
+{
     if (tmin <= tt && tt <= tmax) {
         *t = tt;
         *u = uu;
@@ -388,33 +374,33 @@ static bool SolveBilinearPatch(T* t, T* u, T* v, T tmin, T tmax, T tt, T uu, T v
     return false;
 }
 
-template <class T>
-static int Solve2(T root[2], T const coeff[3]) {
-    T A = coeff[0];
-    T B = coeff[1];
-    T C = coeff[2];
-    if (fabs(A) <= std::numeric_limits<T>::min()) {
-        if (fabs(B) <= std::numeric_limits<T>::min()) return 0;
-        T x = -C / B;
+static int Solve2(float root[2], float const coeff[3])
+{
+    float A = coeff[0];
+    float B = coeff[1];
+    float C = coeff[2];
+    if (fabs(A) <= std::numeric_limits<float>::min()) {
+        if (fabs(B) <= std::numeric_limits<float>::min()) return 0;
+        float x = -C / B;
         root[0] = x;
         return 1;
     }
     else {
-        T D = B*B - 4 * A*C;
+        float D = B*B - 4 * A*C;
         if (D < 0) {
             return 0;
         }
         else if (D == 0) {
-            T x = -0.5*B / A;
+            float x = -0.5*B / A;
             root[0] = x;
             return 1;
         }
         else {
-            T x1 = (fabs(B) + sqrt(D)) / (2.0 * A);
+            float x1 = (fabs(B) + sqrt(D)) / (2.0 * A);
             if (B >= 0) {
                 x1 = -x1;
             }
-            T x2 = C / (A * x1);
+            float x2 = C / (A * x1);
             if (x1 > x2) std::swap(x1, x2);
             root[0] = x1;
             root[1] = x2;
@@ -422,11 +408,12 @@ static int Solve2(T root[2], T const coeff[3]) {
         }
     }
 }
-template<class T>
-static T ComputeU(T A1, T A2, T B1, T B2, T C1, T C2, T D1, T D2, T v) {
+
+static float ComputeU(float A1, float A2, float B1, float B2, float C1, float C2, float D1, float D2, float v)
+{
     //return div((v*(C1-C2)+(D1-D2)),(v*(A2-A1)+(B2-B1)));
-    T a = v*A2 + B2;
-    T b = v*(A2 - A1) + B2 - B1;
+    float a = v*A2 + B2;
+    float b = v*(A2 - A1) + B2 - B1;
     if (fabs(b) >= fabs(a)) {
         return (v*(C1 - C2) + D1 - D2) / b;
     }
@@ -434,15 +421,13 @@ static T ComputeU(T A1, T A2, T B1, T B2, T C1, T C2, T D1, T D2, T v) {
         return (-v*C2 - D2) / a;
     }
 }
-template<class T>
-static T ComputeT(T a, T b, T c, T d, T iq, T u, T v)
+
+static float ComputeT(float a, float b, float c, float d, float iq, float u, float v)
 {
     return ((u*v)*a + u*b + v*c + d)*iq;
 }
 
-template<typename T, typename V>
-static bool TestBilinearPatch(T *t, T *u, T *v,
-    V const p[4], T tmin, T tmax, float uvMargin)
+static bool TestBilinearPatch(float *t, float *u, float *v, const float3 p[4], float tmin, float tmax, float uvMargin)
 {
     trace("Test bilinear (%f, %f, %f) (%f, %f, %f), (%f, %f, %f), (%f, %f, %f)\n",
         p[0][0], p[0][1], p[0][2],
@@ -450,16 +435,16 @@ static bool TestBilinearPatch(T *t, T *u, T *v,
         p[2][0], p[2][1], p[2][2],
         p[3][0], p[3][1], p[3][2]);
 
-    V const & p00 = p[0];
-    V const & p10 = p[1];
-    V const & p01 = p[2];
-    V const & p11 = p[3];
+    const float3& p00 = p[0];
+    const float3& p10 = p[1];
+    const float3& p01 = p[2];
+    const float3& p11 = p[3];
 
     static const int nPlane = 2;
-    V a = p11 - p10 - p01 + p00;
-    V b = p10 - p00;
-    V c = p01 - p00;
-    V d = p00;
+    float3 a = p11 - p10 - p01 + p00;
+    float3 b = p10 - p00;
+    float3 c = p01 - p00;
+    float3 d = p00;
 
     //xz-zx
     float A1 = a[0];
@@ -511,61 +496,50 @@ static bool TestBilinearPatch(T *t, T *u, T *v,
     return false;
 }
 
-template <typename T, typename V>
-inline T dot_(V const &a, V const &b) {
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-
-template<typename T, typename V>
-static bool TestTriangle(T *tt, T *uu, T *vv,
-    V const & p0, V const & p1, V const & p2, V const & org, V const & dir, T tmin, T tmax)
+static bool TestTriangle(float *tt, float *uu, float *vv,
+    const float3& p0, const float3& p1, const float3& p2, const float3& org, const float3& dir, float tmin, float tmax)
 {
-    //typedef typename V::ElementType Scalar;
-    T t, u, v;
-    //-e1 = p0-p1
-    V e1(p0 - p1);//vA
-                  //-e2 = p0-p2
-    V e2(p0 - p2);//vB 
-                  //dir = GHI 
-    V bDir(cross(e2, dir));
-
-    T iM = dot_<T, V>(e1, bDir);
+    float t, u, v;
+    float3 e1(p0 - p1);
+    float3 e2(p0 - p2);
+    float3 bDir(cross(e2, dir));
+    float iM = dot(e1, bDir);
 
     if (0 < iM) {
         //p0-org
-        V vOrg(p0 - org);
+        float3 vOrg(p0 - org);
 
-        u = dot_<T, V>(vOrg, bDir);
-        if (u < 0 || iM < u)return false;
+        u = dot(vOrg, bDir);
+        if (u < 0 || iM < u) return false;
 
-        V vE(cross(e1, vOrg));
+        float3 vE(cross(e1, vOrg));
 
-        v = dot_<T, V>(dir, vE);
-        if (v < 0 || iM < u + v)return false;
+        v = dot(dir, vE);
+        if (v < 0 || iM < u + v) return false;
 
-        t = -dot_<T, V>(e2, vE);
+        t = -dot(e2, vE);
     }
     else if (iM < 0) {
         //p0-org
-        V vOrg(p0 - org);//JKL
+        float3 vOrg(p0 - org);//JKL
 
-        u = dot_<T, V>(vOrg, bDir);
-        if (u > 0 || iM > u)return false;
+        u = dot(vOrg, bDir);
+        if (u > 0 || iM > u) return false;
 
-        V vE(cross(e1, vOrg));
+        float3 vE(cross(e1, vOrg));
 
-        v = dot_<T, V>(dir, vE);
-        if (v > 0 || iM > u + v)return false;
+        v = dot(dir, vE);
+        if (v > 0 || iM > u + v) return false;
 
-        t = -dot_<T, V>(e2, vE);
+        t = -dot(e2, vE);
     }
     else {
         return false;
     }
 
-    iM = T(1) / iM;
+    iM = 1.0f / iM;
     t *= iM;
-    if (t < tmin || tmax < t)return false;
+    if (t < tmin || tmax < t) return false;
     u *= iM;
     v *= iM;
 
@@ -577,33 +551,30 @@ static bool TestTriangle(T *tt, T *uu, T *vv,
 }
 
 
-template<typename T, typename V>
-static bool TestQuadPlane(T *t, T *u, T *v,
-    V const p[4], V const & org, V const & dir, T tmin, T tmax)
+static bool TestQuadPlane(float *t, float *u, float *v,
+    const float3 p[4], const float3& org, const float3& dir, float tmin, float tmax)
 {
-    //typedef typename V::ElementType Scalar;
+    const float3& p00 = p[0];
+    const float3& p10 = p[1];
+    const float3& p01 = p[2];
+    const float3& p11 = p[3];
 
-    V const & p00 = p[0];
-    V const & p10 = p[1];
-    V const & p01 = p[2];
-    V const & p11 = p[3];
-
-    T tt, uu, vv;
+    float tt, uu, vv;
     bool bRet = false;
     if (TestTriangle(&tt, &uu, &vv, p00, p01, p10, org, dir, tmin, tmax))
     {
-        T ww = T(1) - (uu + vv);
-        *u = ww*T(0) + uu*T(0) + vv*T(1);//00 - 01 - 10
-        *v = ww*T(0) + uu*T(1) + vv*T(0);//00 - 01 - 10
+        float ww = float(1) - (uu + vv);
+        *u = ww*float(0) + uu*float(0) + vv*float(1);//00 - 01 - 10
+        *v = ww*float(0) + uu*float(1) + vv*float(0);//00 - 01 - 10
         *t = tt;
         tmax = tt;
         bRet = true;
     }
     if (TestTriangle(&tt, &uu, &vv, p10, p01, p11, org, dir, tmin, tmax))
     {
-        T ww = T(1) - (uu + vv);
-        *u = ww*T(1) + uu*T(0) + vv*T(1);//10 - 01 - 11
-        *v = ww*T(0) + uu*T(1) + vv*T(1);//10 - 01 - 11
+        float ww = float(1) - (uu + vv);
+        *u = ww*float(1) + uu*float(0) + vv*float(1);//10 - 01 - 11
+        *v = ww*float(0) + uu*float(1) + vv*float(1);//10 - 01 - 11
         *t = tt;
         tmax = tt;
         bRet = true;
@@ -701,7 +672,9 @@ bool BezierPatchIntersectionImpl::testInternal(BezierPatchHit& info, const Ray& 
         }
     }
 
-    if (uvt.failFlag == 0 or m_wcpFlag == 0) return bRet;
+    if (uvt.failFlag == 0 || m_wcpFlag == 0) {
+        return bRet;
+    }
 
     {
         // TODO: still inefficient. wcpFlag knows which edge has to be split
@@ -853,7 +826,7 @@ bool BezierPatchIntersectionImpl::testBezierClipU(UVT& info, const BezierPatch &
         else {
             tt0 = std::max<float>(0.0, tt0 - UVEPSILON);
             tt1 = std::min<float>(tt1 + UVEPSILON, 1.0);
-            float ut[] = { Lerp(u0,u1,tt0),Lerp(u0,u1,tt1) };
+            float ut[] = { glm::mix(u0,u1,tt0), glm::mix(u0,u1,tt1) };
             BezierPatch tmp;
             patch.CropU(tmp, tt0, tt1);
             return testBezierClipV(info, tmp, ut[0], ut[1],
@@ -941,7 +914,7 @@ bool BezierPatchIntersectionImpl::testBezierClipV(UVT& info, const BezierPatch& 
         else {
             tt0 = std::max<float>(0.0f, tt0 - UVEPSILON);
             tt1 = std::min<float>(tt1 + UVEPSILON, 1.0f);
-            float vt[] = { Lerp(v0,v1,tt0),Lerp(v0,v1,tt1) };
+            float vt[] = { glm::mix(v0,v1,tt0), glm::mix(v0,v1,tt1) };
             BezierPatch tmp;
             patch.CropV(tmp, tt0, tt1);
             return testBezierClipU(info, tmp, u0, u1,
@@ -1017,16 +990,16 @@ bool BezierPatchIntersectionImpl::testBezierClipL(UVT& info, const BezierPatch& 
             if (!m_useTriangle) {
                 if (TestBilinearPatch(&t, &u, &v, P, zmin, zmax, m_uvMargin)) {
 
-                    u = Lerp(i*du, (i + 1)*du, u);
-                    v = Lerp(j*dv, (j + 1)*dv, v);
+                    u = glm::mix(i*du, (i + 1)*du, u);
+                    v = glm::mix(j*dv, (j + 1)*dv, v);
 
                     uu = u;
                     vv = v;
 
                     zmax = t;
 
-                    u = Lerp(u0, u1, u);
-                    v = Lerp(v0, v1, v);
+                    u = glm::mix(u0, u1, u);
+                    v = glm::mix(v0, v1, v);
 
                     info.u = u;
                     info.v = v;
@@ -1037,16 +1010,16 @@ bool BezierPatchIntersectionImpl::testBezierClipL(UVT& info, const BezierPatch& 
             }
             else {
                 if (TestQuadPlane(&t, &u, &v, P, float3(0, 0, 0), float3(0, 0, 1), zmin, zmax)) {
-                    u = Lerp(i*du, (i + 1)*du, u);
-                    v = Lerp(j*dv, (j + 1)*dv, v);
+                    u = glm::mix(i*du, (i + 1)*du, u);
+                    v = glm::mix(j*dv, (j + 1)*dv, v);
 
                     uu = u;
                     vv = v;
 
                     zmax = t;
 
-                    u = Lerp(u0, u1, u);
-                    v = Lerp(v0, v1, v);
+                    u = glm::mix(u0, u1, u);
+                    v = glm::mix(v0, v1, v);
 
                     info.u = u;
                     info.v = v;
@@ -1104,9 +1077,9 @@ bool BezierPatchIntersectionImpl::testBezierClipRangeU(UVT& info, const BezierPa
         return testBezierClipL(info, mpatch, u0, u1, v0, v1, zmin, zmax, level);
     }
     else {
-        float tw = 1;
-        float tt0 = 0;
-        float tt1 = 1;
+        float tw = 1.0f;
+        float tt0 = 0.0f;
+        float tt1 = 1.0f;
 
         if (m_useBezierClip & bClip) {
             float rng[2];
@@ -1135,7 +1108,7 @@ bool BezierPatchIntersectionImpl::testBezierClipRangeU(UVT& info, const BezierPa
         else {
             tt0 = std::max<float>(0.0, tt0 - UVEPSILON);
             tt1 = std::min<float>(tt1 + UVEPSILON, 1.0);
-            float ut[] = { Lerp(u0,u1,tt0),Lerp(u0,u1,tt1) };
+            float ut[] = { glm::mix(u0,u1,tt0), glm::mix(u0,u1,tt1) };
             return testBezierClipRangeV(info, patch, ut[0], ut[1],
                 v0, v1, zmin, zmax, level + 1, max_level, eps);
         }
@@ -1204,7 +1177,7 @@ bool BezierPatchIntersectionImpl::testBezierClipRangeV(UVT& info, const BezierPa
         else {
             tt0 = std::max<float>(0.0, tt0 - UVEPSILON);
             tt1 = std::min<float>(tt1 + UVEPSILON, 1.0);
-            float vt[] = { Lerp(v0,v1,tt0),Lerp(v0,v1,tt1) };
+            float vt[] = { glm::mix(v0,v1,tt0), glm::mix(v0,v1,tt1) };
             return testBezierClipRangeU(info, patch, u0, u1,
                 vt[0], vt[1], zmin, zmax, level + 1, max_level, eps);
         }
