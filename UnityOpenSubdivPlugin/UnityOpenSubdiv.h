@@ -31,5 +31,6 @@ uosCLinkage uosExport void          uosDestroyContext(uosContext* ctx);
 uosCLinkage uosExport cfloat3 uosBezierPatchEvaluate(const BezierPatch *bp, const float2 *uv);
 uosCLinkage uosExport cfloat3 uosBezierPatchEvaluateNormal(const BezierPatch *bp, const float2 *uv);
 uosCLinkage uosExport bool uosBezierPatchRaycast(const BezierPatch *bp, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit);
+uosCLinkage uosExport bool uosBezierPatchRaycastWithTransform(const BezierPatch *bp, const float4x4 *bptrans, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit);
 
 #endif // UnityOpenSubdiv_h

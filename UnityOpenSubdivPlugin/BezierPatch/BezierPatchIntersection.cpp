@@ -1190,3 +1190,9 @@ bool BezierPatchRaycast(const BezierPatch &bp, const Ray &ray, float max_distanc
     BezierPatchIntersectionImpl impl(bp);
     return impl.Test(hit, ray, 0.0f, max_distance);
 }
+
+bool BezierPatchRaycast(const BezierPatch &bp, const float4x4 &bptrans, const Ray &ray, float max_distance, BezierPatchHit &hit)
+{
+    BezierPatchIntersectionImpl impl(BezierPatch(bp, bptrans));
+    return impl.Test(hit, ray, 0.0f, max_distance);
+}

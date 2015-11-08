@@ -60,6 +60,12 @@ uosCLinkage uosExport cfloat3 uosBezierPatchEvaluateNormal(const BezierPatch *bp
 
 uosCLinkage uosExport bool uosBezierPatchRaycast(const BezierPatch *bp, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit)
 {
-    Ray ray = {*orig, *dir};
+    Ray ray = { *orig, *dir };
     return BezierPatchRaycast(*bp, ray, max_distance, *hit);
+}
+
+uosCLinkage uosExport bool uosBezierPatchRaycastWithTransform(const BezierPatch *bp, const float4x4 *bptrans, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit)
+{
+    Ray ray = {*orig, *dir};
+    return BezierPatchRaycast(*bp, *bptrans, ray, max_distance, *hit);
 }

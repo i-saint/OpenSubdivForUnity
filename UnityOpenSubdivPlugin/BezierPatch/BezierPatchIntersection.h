@@ -18,6 +18,7 @@ struct BezierPatchHit
 };
 
 bool BezierPatchRaycast(const BezierPatch &bp, const Ray &ray, float max_distance, BezierPatchHit &hit);
+bool BezierPatchRaycast(const BezierPatch &bp, const float4x4 &bptrans, const Ray &ray, float max_distance, BezierPatchHit &hit);
 
 
 

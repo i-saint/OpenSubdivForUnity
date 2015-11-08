@@ -44,14 +44,14 @@ namespace Ist
             return uosBezierPatchEvaluateNormal(ref cp[0], ref uv);
         }
 
-        public bool Raycast(Vector3 orig, Vector3 dir, ref BezierPatchHit hit)
-        {
-            return Raycast(orig, dir, Mathf.Infinity, ref hit);
-        }
-
         public bool Raycast(Vector3 orig, Vector3 dir, float max_distance, ref BezierPatchHit hit)
         {
             return uosBezierPatchRaycast(ref cp[0], ref orig, ref dir, max_distance, ref hit);
+        }
+
+        public bool Raycast(ref Matrix4x4 trans, Vector3 orig, Vector3 dir, float max_distance, ref BezierPatchHit hit)
+        {
+            return uosBezierPatchRaycastWithTransform(ref cp[0], ref trans, ref orig, ref dir, max_distance, ref hit);
         }
 
 
@@ -79,6 +79,9 @@ namespace Ist
 
         [DllImport("UnityOpenSubdiv")]
         static extern bool uosBezierPatchRaycast(ref Vector3 bpatch, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
+
+        [DllImport("UnityOpenSubdiv")]
+        static extern bool uosBezierPatchRaycastWithTransform(ref Vector3 bpatch, ref Matrix4x4 bptrans, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
         #endregion
     }
 }

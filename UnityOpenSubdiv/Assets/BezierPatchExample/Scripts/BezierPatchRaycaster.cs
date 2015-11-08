@@ -19,7 +19,8 @@ public class BezierPatchRaycaster : MonoBehaviour
         if(m_bpatch != null)
         {
             BezierPatchHit hit = default(BezierPatchHit);
-            if(m_bpatch.bpatch.Raycast(pos, dir, max_distance, ref hit))
+            var t = m_bpatch.transform.localToWorldMatrix;
+            if (m_bpatch.bpatch.Raycast(ref t, pos, dir, max_distance, ref hit))
             {
                 var hit_pos = pos + dir * hit.t;
                 //var hit_pos = m_bpatch.bpatch.Evaluate(hit.uv); // same as above

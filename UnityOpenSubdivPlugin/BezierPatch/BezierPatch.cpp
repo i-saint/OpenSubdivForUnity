@@ -3,94 +3,90 @@
 
 
 
-static inline void BPSplitU(float3 *a, float3 *b, const float3 *p, float t)
+static inline void BPSplitU(float3 a[4], float3 b[4], const float3 p[4], float t)
 {
-    const int stride = 1;
+    float S = 1.0f - t;
+    float3 p0 = p[0];
+    float3 p1 = p[1];
+    float3 p2 = p[2];
+    float3 p3 = p[3];
+    a[0] = p0;
+    a[1] = p0*S + p1*t;
+    a[2] = p0*S*S + p1 * 2.0f * S*t + p2*t*t;
+    a[3] = p0*S*S*S + p1 * 3.0f * S*S*t + p2 * 3.0f * S*t*t + p3*t*t*t;
 
-    float S = 1 - t;
-    float3 p0 = p[0 * stride];
-    float3 p1 = p[1 * stride];
-    float3 p2 = p[2 * stride];
-    float3 p3 = p[3 * stride];
-    a[0 * stride] = p0;
-    a[1 * stride] = p0*S + p1*t;
-    a[2 * stride] = p0*S*S + p1 * 2.0f * S*t + p2*t*t;
-    a[3 * stride] = p0*S*S*S + p1 * 3.0f * S*S*t + p2 * 3.0f * S*t*t + p3*t*t*t;
-
-    b[0 * stride] = p0*S*S*S + p1 * 3.0f * S*S*t + p2 * 3.0f * S*t*t + p3*t*t*t;
-    b[1 * stride] = p3*t*t + p2 * 2.0f * t*S + p1*S*S;
-    b[2 * stride] = p3*t + p2*S;
-    b[3 * stride] = p3;
+    b[0] = p0*S*S*S + p1 * 3.0f * S*S*t + p2 * 3.0f * S*t*t + p3*t*t*t;
+    b[1] = p3*t*t + p2 * 2.0f * t*S + p1*S*S;
+    b[2] = p3*t + p2*S;
+    b[3] = p3;
 }
 
-static inline void BPSplitV(float3 *a, float3 *b, const float3 *p, float t)
+static inline void BPSplitV(float3 a[16], float3 b[16], const float3 p[16], float t)
 {
-    const int stride = 4;
+    float S = 1.0f - t;
+    float3 p0 = p[ 0];
+    float3 p1 = p[ 4];
+    float3 p2 = p[ 8];
+    float3 p3 = p[12];
+    a[ 0] = p0;
+    a[ 4] = p0*S + p1*t;
+    a[ 8] = p0*S*S + p1 * 2.0f * S*t + p2*t*t;
+    a[12] = p0*S*S*S + p1 * 3.0f * S*S*t + p2 * 3.0f * S*t*t + p3*t*t*t;
 
-    float S = 1 - t;
-    float3 p0 = p[0 * stride];
-    float3 p1 = p[1 * stride];
-    float3 p2 = p[2 * stride];
-    float3 p3 = p[3 * stride];
-    a[0 * stride] = p0;
-    a[1 * stride] = p0*S + p1*t;
-    a[2 * stride] = p0*S*S + p1 * 2.0f * S*t + p2*t*t;
-    a[3 * stride] = p0*S*S*S + p1 * 3.0f * S*S*t + p2 * 3.0f * S*t*t + p3*t*t*t;
-
-    b[0 * stride] = p0*S*S*S + p1 * 3.0f * S*S*t + p2 * 3.0f * S*t*t + p3*t*t*t;
-    b[1 * stride] = p3*t*t + p2 * 2.0f * t*S + p1*S*S;
-    b[2 * stride] = p3*t + p2*S;
-    b[3 * stride] = p3;
+    b[ 0] = p0*S*S*S + p1 * 3.0f * S*S*t + p2 * 3.0f * S*t*t + p3*t*t*t;
+    b[ 4] = p3*t*t + p2 * 2.0f * t*S + p1*S*S;
+    b[ 8] = p3*t + p2*S;
+    b[12] = p3;
 }
 
-static inline void BPCropU(float3 *out, const float3 *in, float s, float t)
+static inline void BPCropU(float3 out[4], const float3 in[4], float s, float t)
 {
     const float3 p0 = in[0];
     const float3 p1 = in[1];
     const float3 p2 = in[2];
     const float3 p3 = in[3];
-    float T = 1 - s;
-    float S = 1 - t;
-    s = 1 - T;
-    t = 1 - S;
-    out[0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3 * T) + p2*(s*s)*(3 * T));
-    out[1] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2 * (S*s) + T*t) + p2*s*(2 * (t*T) + (s*S)));
-    out[2] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2 * (s*S) + t*T) + p1*S*(2 * (T*t) + (S*s)));
-    out[3] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3 * t) + p1*(S*S)*(3 * t));
+    float T = 1.0f - s;
+    float S = 1.0f - t;
+    s = 1.0f - T;
+    t = 1.0f - S;
+    out[0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3.0f * T) + p2*(s*s)*(3.0f * T));
+    out[1] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2.0f * (S*s) + T*t) + p2*s*(2.0f * (t*T) + (s*S)));
+    out[2] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2.0f * (s*S) + t*T) + p1*S*(2.0f * (T*t) + (S*s)));
+    out[3] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3.0f * t) + p1*(S*S)*(3.0f * t));
 }
 
-static inline void BPCropV(float3 *out, const float3 *in, float s, float t)
+static inline void BPCropV(float3 out[16], const float3 in[16], float s, float t)
 {
-    const float3 p0 = in[0];
-    const float3 p1 = in[4];
-    const float3 p2 = in[8];
+    const float3 p0 = in[ 0];
+    const float3 p1 = in[ 4];
+    const float3 p2 = in[ 8];
     const float3 p3 = in[12];
-    float T = 1 - s;
-    float S = 1 - t;
-    s = 1 - T;
-    t = 1 - S;
-    out[0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3 * T) + p2*(s*s)*(3 * T));
-    out[4] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2 * (S*s) + T*t) + p2*s*(2 * (t*T) + (s*S)));
-    out[8] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2 * (s*S) + t*T) + p1*S*(2 * (T*t) + (S*s)));
-    out[12]= (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3 * t) + p1*(S*S)*(3 * t));
+    float T = 1.0f - s;
+    float S = 1.0f - t;
+    s = 1.0f - T;
+    t = 1.0f - S;
+    out[ 0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3 * T) + p2*(s*s)*(3.0f * T));
+    out[ 4] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2.0f * (S*s) + T*t) + p2*s*(2.0f * (t*T) + (s*S)));
+    out[ 8] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2.0f * (s*S) + t*T) + p1*S*(2.0f * (T*t) + (S*s)));
+    out[12] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3.0f * t) + p1*(S*S)*(3.0f * t));
 }
 
-static inline float3 BPEvaluate(float t, const float3 *cp)
+static inline float3 BPEvaluate(float t, const float3 cp[4])
 {
     float it = 1.0f - t;
-    return cp[0] * (       (it*it*it)          )
-         + cp[1] * (3.0f * (it*it   ) * (t)    )
-         + cp[2] * (3.0f * (it      ) * (t*t)  )
-         + cp[3] * (                    (t*t*t));
+    return cp[0] * (it*it*it)
+         + cp[1] * (3.0f*(it*it*t))
+         + cp[2] * (3.0f*(it*t*t))
+         + cp[3] * (t*t*t);
 }
 
-static inline float3 BPEvaluateD(float t, const float3 *cp)
+static inline float3 BPEvaluateD(float t, const float3 cp[4])
 {
     float t2 = t * t;
     return cp[0] * (3.0f * t2 *-1.0f + 2.0f * t * 3.0f - 3.0f)
          + cp[1] * (3.0f * t2 * 3.0f + 2.0f * t *-6.0f + 3.0f)
-         + cp[2] * (3.0f * t2 *-3.0f + 2.0f * t * 3.0f       )
-         + cp[3] * (3.0f * t2 * 1.0f                         );
+         + cp[2] * (3.0f * t2 *-3.0f + 2.0f * t * 3.0f )
+         + cp[3] * (3.0f * t2 * 1.0f );
 }
 
 
