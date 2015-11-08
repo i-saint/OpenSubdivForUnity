@@ -48,14 +48,6 @@ public:
     }
 
 private:
-    void bezierSplit(float3 a[], float3 b[], const float3 p[], float t) const;
-    void bezierSplitV(float3 a[], float3 b[], const float3 p[], float t) const;
-    void bezierCrop(float3 r[], const float3 p[], float s, float t) const;
-    void bezierCropV(float3 r[], const float3 p[], float s, float t) const;
-    static float3 evaluate(float t, const float3 *cp);
-    static float3 evaluateD(float t, const float3 *cp);
-
-private:
     float3 m_cp[Ncp];
 };
 
