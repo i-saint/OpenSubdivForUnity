@@ -19,6 +19,7 @@ namespace Ist
             cp30, cp31, cp32, cp33;
     }
 
+    [System.Serializable]
     public struct BezierPatchHit
     {
         public Vector2 uv;
