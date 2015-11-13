@@ -99,23 +99,23 @@ namespace Ist
             if (m_cpobj == null || m_cpobj.Length != 16)
             {
                 m_cpobj = new Transform[16];
-            }
-    
-            var trans = GetComponent<Transform>();
-            for (int y = 0; y < 4; ++y)
-            {
-                for (int x = 0; x < 4; ++x)
+
+                var trans = GetComponent<Transform>();
+                for (int y = 0; y < 4; ++y)
                 {
-                    int i = y * 4 + x;
-                    if (m_cpobj[i] == null)
+                    for (int x = 0; x < 4; ++x)
                     {
-                        var go = new GameObject();
-                        go.name = "Control Point [" + y + "][" + x + "]";
-                        go.AddComponent<BezierPatchControlPoint>();
-                        var t = go.GetComponent<Transform>();
-                        t.position = m_bpatch.cp[i];
-                        t.SetParent(trans);
-                        m_cpobj[i] = t;
+                        int i = y * 4 + x;
+                        if (m_cpobj[i] == null)
+                        {
+                            var go = new GameObject();
+                            go.name = "Control Point [" + y + "][" + x + "]";
+                            go.AddComponent<BezierPatchControlPoint>();
+                            var t = go.GetComponent<Transform>();
+                            t.position = m_bpatch.cp[i];
+                            t.SetParent(trans);
+                            m_cpobj[i] = t;
+                        }
                     }
                 }
             }

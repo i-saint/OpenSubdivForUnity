@@ -39,36 +39,36 @@ static inline void BPSplitV(float3 a[16], float3 b[16], const float3 p[16], floa
     b[12] = p3;
 }
 
-static inline void BPCropU(float3 out[4], const float3 in[4], float s, float t)
+static inline void BPCropU(float3 dst[4], const float3 src[4], float s, float t)
 {
-    const float3 p0 = in[0];
-    const float3 p1 = in[1];
-    const float3 p2 = in[2];
-    const float3 p3 = in[3];
+    const float3 p0 = src[0];
+    const float3 p1 = src[1];
+    const float3 p2 = src[2];
+    const float3 p3 = src[3];
     float T = 1.0f - s;
     float S = 1.0f - t;
     s = 1.0f - T;
     t = 1.0f - S;
-    out[0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3.0f * T) + p2*(s*s)*(3.0f * T));
-    out[1] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2.0f * (S*s) + T*t) + p2*s*(2.0f * (t*T) + (s*S)));
-    out[2] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2.0f * (s*S) + t*T) + p1*S*(2.0f * (T*t) + (S*s)));
-    out[3] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3.0f * t) + p1*(S*S)*(3.0f * t));
+    dst[0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3.0f * T) + p2*(s*s)*(3.0f * T));
+    dst[1] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2.0f * (S*s) + T*t) + p2*s*(2.0f * (t*T) + (s*S)));
+    dst[2] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2.0f * (s*S) + t*T) + p1*S*(2.0f * (T*t) + (S*s)));
+    dst[3] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3.0f * t) + p1*(S*S)*(3.0f * t));
 }
 
-static inline void BPCropV(float3 out[16], const float3 in[16], float s, float t)
+static inline void BPCropV(float3 dst[16], const float3 src[16], float s, float t)
 {
-    const float3 p0 = in[ 0];
-    const float3 p1 = in[ 4];
-    const float3 p2 = in[ 8];
-    const float3 p3 = in[12];
+    const float3 p0 = src[ 0];
+    const float3 p1 = src[ 4];
+    const float3 p2 = src[ 8];
+    const float3 p3 = src[12];
     float T = 1.0f - s;
     float S = 1.0f - t;
     s = 1.0f - T;
     t = 1.0f - S;
-    out[ 0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3 * T) + p2*(s*s)*(3.0f * T));
-    out[ 4] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2.0f * (S*s) + T*t) + p2*s*(2.0f * (t*T) + (s*S)));
-    out[ 8] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2.0f * (s*S) + t*T) + p1*S*(2.0f * (T*t) + (S*s)));
-    out[12] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3.0f * t) + p1*(S*S)*(3.0f * t));
+    dst[ 0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3.0f * T) + p2*(s*s)*(3.0f * T));
+    dst[ 4] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2.0f * (S*s) + T*t) + p2*s*(2.0f * (t*T) + (s*S)));
+    dst[ 8] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2.0f * (s*S) + t*T) + p1*S*(2.0f * (T*t) + (S*s)));
+    dst[12] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3.0f * t) + p1*(S*S)*(3.0f * t));
 }
 
 static inline float3 BPEvaluate(float t, const float3 cp[4])
@@ -212,7 +212,7 @@ float3 BezierPatch::EvaluateNormal(const float2& uv) const
     return normalize(cross(dv, du));
 }
 
-void BezierPatch::Split(BezierPatch patches[4], float u, float v) const
+void BezierPatch::Split(BezierPatch dst[4], float u, float v) const
 {
     BezierPatch tmp0, tmp1;
 
@@ -227,58 +227,58 @@ void BezierPatch::Split(BezierPatch patches[4], float u, float v) const
 
     // split V
     for (int i = 0; i < N; ++i) {
-        BPSplitU(&patches[0].m_cp[i*N + 0],
-            &patches[2].m_cp[i*N + 0],
+        BPSplitU(&dst[0].m_cp[i*N + 0],
+            &dst[2].m_cp[i*N + 0],
             &tmp0[i*N + 0], v);
-        BPSplitU(&patches[1].m_cp[i*N + 0],
-            &patches[3].m_cp[i*N + 0],
+        BPSplitU(&dst[1].m_cp[i*N + 0],
+            &dst[3].m_cp[i*N + 0],
             &tmp1[i*N + 0], v);
     }
 
     // vu -> uv
-    patches[0].Transpose(); //00
-    patches[1].Transpose(); //10
-    patches[2].Transpose(); //01
-    patches[3].Transpose(); //11
+    dst[0].Transpose(); //00
+    dst[1].Transpose(); //10
+    dst[2].Transpose(); //01
+    dst[3].Transpose(); //11
 }
 
-void BezierPatch::SplitU(BezierPatch patches[2], float u) const
+void BezierPatch::SplitU(BezierPatch dst[2], float u) const
 {
     for (int i = 0; i < N; ++i) {
-        BPSplitU(&patches[0].m_cp[i*N + 0],
-            &patches[1].m_cp[i*N + 0],
+        BPSplitU(&dst[0].m_cp[i*N + 0],
+            &dst[1].m_cp[i*N + 0],
             &m_cp[i*N + 0], u);
     }
 }
 
-void BezierPatch::SplitV(BezierPatch patches[2], float v) const
+void BezierPatch::SplitV(BezierPatch dst[2], float v) const
 {
     for (int i = 0; i < N; ++i) {
-        BPSplitV(&patches[0].m_cp[i],
-            &patches[1].m_cp[i],
+        BPSplitV(&dst[0].m_cp[i],
+            &dst[1].m_cp[i],
             &m_cp[i], v);
     }
 }
 
-void BezierPatch::CropU(BezierPatch &patch, float u0, float u1) const
+void BezierPatch::CropU(BezierPatch &dst, float u0, float u1) const
 {
     for (int i = 0; i < N; ++i) {
-        BPCropU(&patch.m_cp[i*N + 0], &m_cp[i*N + 0], u0, u1);
+        BPCropU(&dst.m_cp[i*N + 0], &m_cp[i*N + 0], u0, u1);
     }
 }
 
-void BezierPatch::CropV(BezierPatch &patch, float v0, float v1) const
+void BezierPatch::CropV(BezierPatch &dst, float v0, float v1) const
 {
     for (int i = 0; i < N; ++i) {
-        BPCropV(&patch.m_cp[i], &m_cp[i], v0, v1);
+        BPCropV(&dst.m_cp[i], &m_cp[i], v0, v1);
     }
 }
 
-bool BezierPatch::Crop(BezierPatch &patch, float u0, float u1, float v0, float v1) const
+bool BezierPatch::Crop(BezierPatch &dst, float u0, float u1, float v0, float v1) const
 {
     float3 tmp[Ncp];
     for (int i = 0; i < N; ++i) BPCropU(&tmp[i*N + 0], &m_cp[i*N + 0], u0, u1);
-    for (int i = 0; i < N; ++i) BPCropV(&patch.m_cp[i], &tmp[i], v0, v1);
+    for (int i = 0; i < N; ++i) BPCropV(&dst.m_cp[i], &tmp[i], v0, v1);
     return true;
 }
 

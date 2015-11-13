@@ -9,8 +9,6 @@
 #define DEFAULT_MAX_LEVEL 10
 #define MAX_ITERATION 1000
 
-#define ENABLE_EARLY_OUT
-
 
 
 class BezierPatchIntersectionImpl
@@ -67,10 +65,6 @@ private:
 
 
     const BezierPatch &m_patch;
-    float m_uRange[2];
-    float m_vRange[2];
-    float3 m_min;
-    float3 m_max;
     float m_eps;
     int m_maxLevel;
     float m_uvMargin;
@@ -135,7 +129,7 @@ static inline void BPRotateV(BezierPatch& patch)
     patch.Transform(BPRotate2D(dx));
 }
 
-static inline bool BPIsEps(float3 const & min, float3 const & max, float eps)
+static inline bool BPIsEps(const float3& min, const float3& max, float eps)
 {
     //return ((max[1]-min[1])<=eps);
     float xw = max[0] - min[0];
@@ -594,12 +588,7 @@ BezierPatchIntersectionImpl::BezierPatchIntersectionImpl(const BezierPatch &patc
     m_directBilinear(false),
     m_wcpFlag(0)
 {
-    m_uRange[0] = m_vRange[0] = 0;
-    m_uRange[1] = m_vRange[1] = 1;
-
     m_count = 0;
-
-    patch.GetMinMax(m_min, m_max, 1e-3f);
 }
 
 BezierPatchIntersectionImpl::~BezierPatchIntersectionImpl()
@@ -660,8 +649,6 @@ bool BezierPatchIntersectionImpl::testInternal(BezierPatchHit& info, const Ray& 
             float u = uvt.u;
             float v = uvt.v;
 
-            u = m_uRange[0] * (1.0f - u) + m_uRange[1] * u;//global
-            v = m_vRange[0] * (1.0f - v) + m_vRange[1] * v;//global
             info.t = t;
             info.uv.x = u;
             info.uv.y = v;
@@ -718,8 +705,6 @@ bool BezierPatchIntersectionImpl::testInternal(BezierPatchHit& info, const Ray& 
             float u = uvt.u * 0.5f + offsets[2 * i + 0];
             float v = uvt.v * 0.5f + offsets[2 * i + 1];
 
-            u = m_uRange[0] * (1.0f - u) + m_uRange[1] * u;//global
-            v = m_vRange[0] * (1.0f - v) + m_vRange[1] * v;//global
             info.t = t;
             info.uv.x = u;
             info.uv.y = v;
@@ -734,15 +719,14 @@ bool BezierPatchIntersectionImpl::testInternal(BezierPatchHit& info, const Ray& 
 
 bool BezierPatchIntersectionImpl::testBezierPatch(UVT& info, const BezierPatch& patch, float zmin, float zmax, float eps)
 {
-#ifdef ENABLE_EARLY_OUT
+    float3 min, max;
+    patch.GetMinMax(min, max, 1e-3f);
+    if (0.0f < min.x || max.x < 0.0f || //x
+        0.0f < min.y || max.y < 0.0f || //y
+        max.z < zmin || zmax < min.z )  //z
     {
-        float3 min, max;
-        patch.GetMinMax(min, max, 1e-3f);
-        if (0.0f < min.x || max.x < 0.0f) return false; //x
-        if (0.0f < min.y || max.y < 0.0f) return false; //y
-        if (max.z < zmin || zmax < min.z) return false; //z
+        return false;
     }
-#endif // ENABLE_EARLY_OUT
 
     if (m_cropUV) return testBezierClipRangeU(info, patch, 0.0f, 1.0f, 0.0f, 1.0f, zmin, zmax, 0, m_maxLevel, eps);
     else          return testBezierClipU(info, patch, 0.0f, 1.0f, 0.0f, 1.0f, zmin, zmax, 0, m_maxLevel, eps);
@@ -769,19 +753,6 @@ bool BezierPatchIntersectionImpl::testBezierClipU(UVT& info, const BezierPatch &
         0.0f < min.y || max.y < 0.0f || // y
         max.z < zmin || zmax < min.z )  // z
     {
-#if USE_MINMAX_FAILFLAG
-        // set failFlag only if it's very close
-        if (fabs(min[0]) < eps ||
-            fabs(max[0]) < eps ||
-            fabs(min[1]) < eps ||
-            fabs(max[1]) < eps) {
-            int failFlag = ((u0 == float(0)) << 0)
-                | ((u1 == float(1)) << 1)
-                | ((v0 == float(0)) << 2)
-                | ((v1 == float(1)) << 3);
-            info->failFlag |= failFlag;
-        }
-#endif
         return false;
     }
 
@@ -853,22 +824,10 @@ bool BezierPatchIntersectionImpl::testBezierClipV(UVT& info, const BezierPatch& 
     float3 min, max;
     tpatch.GetMinMax(min, max, 1e-3f);
 
-    if (0 < min[0] || max[0] < 0 || // x
-        0 < min[1] || max[1] < 0 || // y
-        max[2] < zmin || zmax < min[2]) { // z
-#if USE_MINMAX_FAILFLAG
-                                          // set failFlag only if it's very close
-        if (fabs(min[0]) < eps ||
-            fabs(max[0]) < eps ||
-            fabs(min[1]) < eps ||
-            fabs(max[1]) < eps) {
-            int failFlag = ((u0 == float(0)) << 0)
-                | ((u1 == float(1)) << 1)
-                | ((v0 == float(0)) << 2)
-                | ((v1 == float(1)) << 3);
-            info->failFlag |= failFlag;
-        }
-#endif      
+    if (0.0f < min[0] || max[0] < 0.0f || // x
+        0.0f < min[1] || max[1] < 0.0f || // y
+        max[2] < zmin || zmax < min[2]) // z
+    {
         return false;
     }
 
@@ -1062,13 +1021,6 @@ bool BezierPatchIntersectionImpl::testBezierClipRangeU(UVT& info, const BezierPa
         0.0f < min[1] || max[1] < 0.0f || // y
         max[2] < zmin || zmax < min[2])   // z
     {
-#if USE_MINMAX_FAILFLAG
-        int failFlag = ((u0 == float(0)) << 0)
-            | ((u1 == float(1)) << 1)
-            | ((v0 == float(0)) << 2)
-            | ((v1 == float(1)) << 3);
-        info->failFlag |= failFlag;
-#endif
         return false;
     }
 
@@ -1130,13 +1082,6 @@ bool BezierPatchIntersectionImpl::testBezierClipRangeV(UVT& info, const BezierPa
         0.0f < min[1] || max[1] < 0.0f || // y
         max[2] < zmin || zmax < min[2])   // z
     {
-#if USE_MINMAX_FAILFLAG
-        int failFlag = ((u0 == float(0)) << 0)
-            | ((u1 == float(1)) << 1)
-            | ((v0 == float(0)) << 2)
-            | ((v1 == float(1)) << 3);
-        info->failFlag |= failFlag;
-#endif
         return false;
     }
 
