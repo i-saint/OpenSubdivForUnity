@@ -12,11 +12,17 @@ namespace Ist
     [System.Serializable]
     public struct BezierPatchRaw
     {
-        Vector3
+        public Vector3
             cp00, cp01, cp02, cp03,
             cp10, cp11, cp12, cp13,
             cp20, cp21, cp22, cp23,
             cp30, cp31, cp32, cp33;
+    }
+
+    [System.Serializable]
+    public struct BezierPatchAABB
+    {
+        public Vector3 center, extents;
     }
 
     [System.Serializable]
@@ -53,6 +59,29 @@ namespace Ist
         public bool Raycast(ref Matrix4x4 trans, Vector3 orig, Vector3 dir, float max_distance, ref BezierPatchHit hit)
         {
             return uosBezierPatchRaycastWithTransform(ref cp[0], ref trans, ref orig, ref dir, max_distance, ref hit);
+        }
+
+
+        public void GetRawData(ref BezierPatchRaw dst)
+        {
+            // I HATE C#
+            dst.cp00 = cp[ 0]; dst.cp01 = cp[ 1]; dst.cp02 = cp[ 2]; dst.cp03 = cp[ 3];
+            dst.cp10 = cp[ 4]; dst.cp11 = cp[ 5]; dst.cp12 = cp[ 6]; dst.cp13 = cp[ 7];
+            dst.cp20 = cp[ 8]; dst.cp21 = cp[ 9]; dst.cp22 = cp[10]; dst.cp23 = cp[11];
+            dst.cp30 = cp[12]; dst.cp31 = cp[13]; dst.cp32 = cp[11]; dst.cp33 = cp[15];
+        }
+
+        public void GetAABB(ref BezierPatchAABB dst)
+        {
+            Vector3 min = cp[0];
+            Vector3 max = cp[0];
+            for(int i=1; i<cp.Length; ++i)
+            {
+                min = Vector3.Min(min, cp[i]);
+                max = Vector3.Max(max, cp[i]);
+            }
+            dst.center = (max + min) * 0.5f;
+            dst.extents = (max - min) * 0.5f;
         }
 
 

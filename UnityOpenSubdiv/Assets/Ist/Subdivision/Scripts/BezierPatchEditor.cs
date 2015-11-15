@@ -7,14 +7,36 @@ using UnityEditor;
 namespace Ist
 {
     [ExecuteInEditMode]
-    public class BezierPatchEditor : MonoBehaviour
+    public class BezierPatchEditor : IBezierPatchContainer
     {
         [SerializeField] BezierPatch m_bpatch = new BezierPatch();
         [SerializeField] bool m_lock;
         [HideInInspector] [SerializeField] Transform[] m_cpobj;
         [HideInInspector] [SerializeField] Mesh m_mesh;
-        ComputeBuffer m_cb;
-    
+        BezierPatchRaw[] m_bpatch_raw;
+        BezierPatchAABB[] m_aabb;
+
+        public override BezierPatchRaw[] GetBezierPatches()
+        {
+            if(m_bpatch_raw == null)
+            {
+                m_bpatch_raw = new BezierPatchRaw[1];
+            }
+            m_bpatch.GetRawData(ref m_bpatch_raw[0]);
+            return m_bpatch_raw;
+        }
+
+        public override BezierPatchAABB[] GetAABBs()
+        {
+            if (m_aabb == null)
+            {
+                m_aabb = new BezierPatchAABB[1];
+            }
+            m_bpatch.GetAABB(ref m_aabb[0]);
+            return m_aabb;
+        }
+
+
         public BezierPatch bpatch { get { return m_bpatch; } }
     
         public void UpdatePreviewMesh()

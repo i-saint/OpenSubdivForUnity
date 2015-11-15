@@ -126,6 +126,9 @@ gbuffer_out frag_gbuffer(vs_out I)
 struct distance_out
 {
     float4 distance : SV_Target0;
+#if ENABLE_DEPTH_OUTPUT
+    float depth : SV_Depth;
+#endif
 };
 
 distance_out frag_distance(vs_out I)
@@ -157,6 +160,9 @@ distance_out frag_distance(vs_out I)
 
     distance_out O;
     O.distance = length(bp_pos - GetCameraPosition());
+#if ENABLE_DEPTH_OUTPUT
+    O.depth = ComputeDepth(mul(UNITY_MATRIX_VP, float4(bp_pos, 1.0)));
+#endif
     return O;
 }
 
@@ -174,6 +180,8 @@ SubShader {
             Pass Replace
             Ref 128
         }
+
+        ZWrite On
 CGPROGRAM
 #pragma target 5.0
 #pragma vertex vert
@@ -183,10 +191,22 @@ CGPROGRAM
 ENDCG
     }
 
+     Pass{
+        Name "ShadowCaster"
+        Tags{ "LightMode" = "ShadowCaster" }
+
+        ZWrite On
+        ColorMask 0
+CGPROGRAM
+#pragma target 5.0
+#pragma vertex vert
+#pragma fragment frag_distance
+#define ENABLE_DEPTH_OUTPUT 1
+ENDCG
+    }
+
     // adaptive pre pass
-    // (depth only. intended to use with low-resolution render target)
     Pass {
-        Tags { "LightMode" = "Deferred" }
         ZWrite Off
 CGPROGRAM
 #pragma target 5.0
