@@ -16,43 +16,54 @@ CGINCLUDE
 #include "Assets/Ist/Foundation/Shaders/BezierPatch.cginc"
 #include "Assets/Ist/Foundation/Shaders/BezierPatchIntersection.cginc"
 
+
+struct Vertex
+{
+    float3 position;
+};
+struct BezierPatchData
+{
+    BezierPatch bpatch;
+    AABB aabb;
+};
+
+StructuredBuffer<Vertex>            _Vertices;
+StructuredBuffer<BezierPatchData>   _BezierPatchData;
+sampler2D _AdaptiveBuffer;
 float4 _SpecularColor;
 
 
 
 struct ia_out
 {
-    float4 vertex : POSITION;
+    uint vertex_id      : SV_VertexID;
+    uint instance_id    : SV_InstanceID;
 };
 
 struct vs_out
 {
-    float4 vertex : SV_POSITION;
-    float4 screen_pos : TEXspos0;
-    float4 world_pos : TEXspos1;
+    float4  vertex      : SV_POSITION;
+    float4  screen_pos  : TEXCOORD0;
+    float4  world_pos   : TEXCOORD1;
+    uint    instance_id : TEXCOORD2;
 };
 
 
 vs_out vert(ia_out I)
 {
+    uint vid = I.vertex_id;
+    uint iid = I.instance_id;
+
+    AABB aabb = _BezierPatchData[iid].aabb;
+    float4 vertex = float4((_Vertices[vid].position * 2.0 * aabb.extents) + aabb.center, 1.0);
+
     vs_out O;
-    O.vertex = mul(UNITY_MATRIX_MVP, I.vertex);
+    O.vertex = mul(UNITY_MATRIX_MVP, vertex);
     //O.screen_pos = ComputeScreenPos(O.vertex);
     O.screen_pos = O.vertex;
-    O.world_pos = mul(_Object2World, I.vertex);
+    O.world_pos = mul(_Object2World, vertex);
+    O.instance_id = iid;
     return O;
-}
-
-
-float3 localize(float3 p)
-{
-    p = mul(_World2Object, float4(p, 1.0)).xyz;
-    return p;
-}
-
-void raymarching(float2 pos, inout float distance)
-{
-
 }
 
 
@@ -66,7 +77,6 @@ struct gbuffer_out
     float depth             : SV_Depth;
 };
 
-
 gbuffer_out frag_gbuffer(vs_out I)
 {
     float3 world_pos = I.world_pos.xyz;
@@ -77,45 +87,76 @@ gbuffer_out frag_gbuffer(vs_out I)
     float2 spos = I.screen_pos.xy;
     spos.x *= _ScreenParams.x / _ScreenParams.y;
 
-    float max_distance = _ProjectionParams.z - _ProjectionParams.y;
-    float distance = 0.0;
-    float zmin = 0.0;          // todo 
-    float zmax = max_distance;  // 
+    uint iid = I.instance_id;
+    BezierPatch bpatch = _BezierPatchData[iid].bpatch;
+    AABB aabb = _BezierPatchData[iid].aabb;
+    float zmin = 0.0;
+    float zmax = length(aabb.extents) * 2.0;
 
-    BezierPatch bpatch;
+    Ray ray = GetCameraRay(spos);
+#if ENABLE_ADAPTIVE
+    ray.origin += ray.direction * tex2D(_AdaptiveBuffer, spos*0.5+0.5).x;
+#else
+    ray.origin = world_pos;
+#endif
+
     BezierPatchHit hit;
-    Ray ray;
-    UNITY_INITIALIZE_OUTPUT(BezierPatch, bpatch);
-
-
-    {
-        float3 cam_pos = GetCameraPosition();
-        float3 cam_forward = GetCameraForward();
-        float3 cam_up = GetCameraUp();
-        float3 cam_right = GetCameraRight();
-        float  cam_focal_len = GetCameraFocalLength();
-
-        ray.direction = normalize(cam_right*spos.x + cam_up*spos.y + cam_forward*cam_focal_len);
-        ray.origin = cam_pos + ray.direction * distance;
-    }
-
     if (!BPIRaycast(bpatch, ray, zmin, zmax, hit)) {
         discard;
     }
 
-    float3 pos = ray.origin + ray.direction * hit.t;
-    float3 normal = BPEvaluateNormal(bpatch, float2(hit.u, hit.v));
+    float3 bp_pos = ray.origin + ray.direction * hit.t;
+    float3 bp_normal = BPEvaluateNormal(bpatch, float2(hit.u, hit.v));
 
 
     gbuffer_out O;
     O.diffuse = _Color;
     O.spec_smoothness = float4(_SpecularColor.rgb, _Glossiness);
-    O.normal = float4(normal*0.5+0.5, 1.0);
+    O.normal = float4(bp_normal*0.5+0.5, 1.0);
     O.emission = _EmissionColor;
 #ifndef UNITY_HDR_ON
     O.emission = exp2(-O.emission);
 #endif
-    O.depth = ComputeDepth(mul(UNITY_MATRIX_VP, float4(pos, 1.0)));
+    O.depth = ComputeDepth(mul(UNITY_MATRIX_VP, float4(bp_pos, 1.0)));
+    return O;
+}
+
+
+
+struct distance_out
+{
+    float4 distance : SV_Target0;
+};
+
+distance_out frag_distance(vs_out I)
+{
+    float3 world_pos = I.world_pos.xyz;
+    I.screen_pos.xy /= I.screen_pos.w;
+#if UNITY_UV_STARTS_AT_TOP
+    I.screen_pos.y *= -1.0;
+#endif
+    float2 spos = I.screen_pos.xy;
+    spos.x *= _ScreenParams.x / _ScreenParams.y;
+
+
+    uint iid = I.instance_id;
+    BezierPatch bpatch = _BezierPatchData[iid].bpatch;
+    AABB aabb = _BezierPatchData[iid].aabb;
+    float zmin = 0.0;
+    float zmax = length(aabb.extents) * 2.0;
+
+    Ray ray = GetCameraRay(spos);
+    ray.origin = world_pos;
+
+    BezierPatchHit hit;
+    if (!BPIRaycast(bpatch, ray, zmin, zmax, hit)) {
+        discard;
+    }
+
+    float3 bp_pos = ray.origin + ray.direction * hit.t;
+
+    distance_out O;
+    O.distance = length(bp_pos - GetCameraPosition());
     return O;
 }
 
@@ -125,6 +166,7 @@ SubShader {
     Tags{ "RenderType" = "Opaque" "DisableBatching" = "True" "Queue" = "Geometry+10" }
     Cull Off
 
+    // g-buffer pass
     Pass {
         Tags { "LightMode" = "Deferred" }
         Stencil {
@@ -133,10 +175,23 @@ SubShader {
             Ref 128
         }
 CGPROGRAM
-#pragma target 3.0
+#pragma target 5.0
 #pragma vertex vert
 #pragma fragment frag_gbuffer
 #pragma multi_compile ___ UNITY_HDR_ON
+#pragma multi_compile ___ ENABLE_ADAPTIVE
+ENDCG
+    }
+
+    // adaptive pre pass
+    // (depth only. intended to use with low-resolution render target)
+    Pass {
+        Tags { "LightMode" = "Deferred" }
+        ZWrite Off
+CGPROGRAM
+#pragma target 5.0
+#pragma vertex vert
+#pragma fragment frag_distance
 ENDCG
     }
 }
