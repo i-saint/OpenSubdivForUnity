@@ -1,4 +1,4 @@
-﻿Shader "Subdivision/Bezier Patch Raytracer" {
+﻿Shader "Ist/BezierPatch/GBuffer" {
 Properties {
     _Color("Color", Color) = (0.5, 0.5, 0.5, 0.5)
     _SpecularColor("Specular Color", Color) = (0.5, 0.5, 0.5, 0.5)
@@ -98,15 +98,19 @@ gbuffer_out frag_gbuffer(vs_out I)
 
     BezierPatchHit hit;
     if (!BPIRaycast(bpatch, ray, zmin, zmax, hit)) {
-        discard;
+        //discard;
     }
 
-    float3 bp_pos = ray.origin + ray.direction * hit.t;
-    float3 bp_normal = BPEvaluateNormal(bpatch, float2(hit.u, hit.v));
+    //float3 bp_pos = ray.origin + ray.direction * hit.t;
+    //float3 bp_normal = BPEvaluateNormal(bpatch, float2(hit.u, hit.v));
+    float3 bp_pos = BPEvaluate(bpatch, spos);
+    float3 bp_normal = BPEvaluateNormal(bpatch, spos);
 
 
     gbuffer_out O;
     O.diffuse = _Color;
+    O.diffuse.rgb = abs(bp_pos);
+
     O.spec_smoothness = float4(_SpecularColor.rgb, _Glossiness);
     O.normal = float4(bp_normal*0.5+0.5, 1.0);
     O.emission = _EmissionColor;

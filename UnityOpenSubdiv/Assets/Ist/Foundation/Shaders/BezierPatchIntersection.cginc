@@ -177,11 +177,10 @@ bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info,
         // if it's small enough, test bilinear.
         if ((bmax.x - bmin.x) < eps || (bmax.y - bmin.y) < eps) {
             if (BPITestBezierClipL_(work.crop, info, u0, u1, v0, v1, zmin, zmax)) {
-                // info is updated.
-                zmax = info.t;
-                info.clip_level = i;
                 ret = true;
             }
+            zmax = info.t;
+            info.clip_level = i;
             // find another intersection
             continue;
         }
