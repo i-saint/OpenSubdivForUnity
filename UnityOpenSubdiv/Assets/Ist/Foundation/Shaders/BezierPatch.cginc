@@ -23,9 +23,9 @@ float3 BPEvaluateNormal(BezierPatch bp, float2 uv);
 void   BPSplit(BezierPatch bp, out BezierPatch dst[4], float u, float v);
 void   BPSplitU(BezierPatch bp, out BezierPatch dst0, out BezierPatch dst1, float t);
 void   BPSplitV(BezierPatch bp, out BezierPatch dst0, out BezierPatch dst1, float t);
+void   BPCrop(BezierPatch bp, out BezierPatch dst, float u0, float u1, float v0, float v1);
 void   BPCropU(BezierPatch bp, out BezierPatch dst, float u0, float u1);
 void   BPCropV(BezierPatch bp, out BezierPatch dst, float v0, float v1);
-bool   BPCrop(BezierPatch bp, out BezierPatch dst, float u0, float u1, float v0, float v1);
 float3 BPGetLv(BezierPatch bp);
 float3 BPGetLu(BezierPatch bp);
 
@@ -154,13 +154,6 @@ void BPSplit(BezierPatch bp, out BezierPatch dst[4], float u, float v)
     BPTranspose(dst[3]); //11
 }
 
-void BPCrop(BezierPatch bp, out BezierPatch dst, float u0, float u1, float v0, float v1)
-{
-    BezierPatch tmp;
-    BPCropU(bp, tmp, u0, u1);
-    BPCropV(tmp, dst, v0, v1);
-}
-
 void BPSplitU(BezierPatch bp, out BezierPatch dst0, out BezierPatch dst1, float t)
 {
     for (int i = 0; i < 16; i += 4) {
@@ -197,6 +190,13 @@ void BPSplitV(BezierPatch bp, out BezierPatch dst0, out BezierPatch dst1, float 
         dst1.cp[i + 8] = p3*t + p2*S;
         dst1.cp[i +12] = p3;
     }
+}
+
+void BPCrop(BezierPatch bp, out BezierPatch dst, float u0, float u1, float v0, float v1)
+{
+    BezierPatch tmp;
+    BPCropU(bp, tmp, u0, u1);
+    BPCropV(tmp, dst, v0, v1);
 }
 
 void BPCropU(BezierPatch bp, out BezierPatch dst, float s, float t)

@@ -16,7 +16,9 @@ namespace Ist
     {
         [SerializeField] Mesh m_bound_mesh;
         [SerializeField] Material m_material;
+        int m_num_vertices = 0;
         Material m_material_copy; // I need to copy material because MaterialPropertyBlock don't have SetBuffer()
+        ComputeBuffer m_buf_vertices;
         ComputeBuffer m_buf_bpatches;
         ComputeBuffer m_buf_aabbs;
 
@@ -29,6 +31,11 @@ namespace Ist
 
         void OnDestroy()
         {
+            if (m_buf_vertices != null)
+            {
+                m_buf_vertices.Release();
+                m_buf_vertices = null;
+            }
             if (m_buf_bpatches != null)
             {
                 m_buf_bpatches.Release();
@@ -51,6 +58,11 @@ namespace Ist
             var cont = GetComponent<IBezierPatchContainer>();
             var bpatches = cont.GetBezierPatches();
             var aabbs = cont.GetAABBs();
+            if (m_buf_vertices == null)
+            {
+                BatchRendererUtil.CreateVertexBuffer(m_bound_mesh, ref m_buf_vertices, ref m_num_vertices);
+                m_material_copy.SetBuffer("_Vertices", m_buf_vertices);
+            }
             if (m_buf_bpatches == null)
             {
                 m_buf_bpatches = new ComputeBuffer(bpatches.Length, BezierPatchRaw.size);
