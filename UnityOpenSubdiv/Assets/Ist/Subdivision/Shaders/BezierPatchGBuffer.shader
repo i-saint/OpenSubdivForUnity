@@ -21,16 +21,12 @@ struct Vertex
 {
     float3 position;
 };
-struct BezierPatchData
-{
-    BezierPatch bpatch;
-    AABB aabb;
-};
 
-StructuredBuffer<Vertex>            _Vertices;
-StructuredBuffer<BezierPatchData>   _BezierPatchData;
-sampler2D _AdaptiveBuffer;
-float4 _SpecularColor;
+StructuredBuffer<Vertex>        _Vertices;
+StructuredBuffer<BezierPatch>   _BezierPatches;
+StructuredBuffer<AABB>          _AABBs;
+sampler2D   _AdaptiveBuffer;
+float4      _SpecularColor;
 
 
 
@@ -54,8 +50,8 @@ vs_out vert(ia_out I)
     uint vid = I.vertex_id;
     uint iid = I.instance_id;
 
-    AABB aabb = _BezierPatchData[iid].aabb;
-    float4 vertex = float4((_Vertices[vid].position * 2.0 * aabb.extents) + aabb.center, 1.0);
+    AABB aabb = _AABBs[iid];
+    float4 vertex = float4((_Vertices[vid].position * (aabb.extents * 2.0)) + aabb.center, 1.0);
 
     vs_out O;
     O.vertex = mul(UNITY_MATRIX_MVP, vertex);
@@ -88,8 +84,8 @@ gbuffer_out frag_gbuffer(vs_out I)
     spos.x *= _ScreenParams.x / _ScreenParams.y;
 
     uint iid = I.instance_id;
-    BezierPatch bpatch = _BezierPatchData[iid].bpatch;
-    AABB aabb = _BezierPatchData[iid].aabb;
+    BezierPatch bpatch = _BezierPatches[iid];
+    AABB aabb = _AABBs[iid];
     float zmin = 0.0;
     float zmax = length(aabb.extents) * 2.0;
 
@@ -143,8 +139,8 @@ distance_out frag_distance(vs_out I)
 
 
     uint iid = I.instance_id;
-    BezierPatch bpatch = _BezierPatchData[iid].bpatch;
-    AABB aabb = _BezierPatchData[iid].aabb;
+    BezierPatch bpatch = _BezierPatches[iid];
+    AABB aabb = _AABBs[iid];
     float zmin = 0.0;
     float zmax = length(aabb.extents) * 2.0;
 

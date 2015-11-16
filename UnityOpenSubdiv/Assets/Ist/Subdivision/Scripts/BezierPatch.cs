@@ -12,6 +12,8 @@ namespace Ist
     [System.Serializable]
     public struct BezierPatchRaw
     {
+        public const int size = 12 * 16;
+
         public Vector3
             cp00, cp01, cp02, cp03,
             cp10, cp11, cp12, cp13,
@@ -22,6 +24,8 @@ namespace Ist
     [System.Serializable]
     public struct BezierPatchAABB
     {
+        public const int size = 12 * 2;
+
         public Vector3 center, extents;
     }
 

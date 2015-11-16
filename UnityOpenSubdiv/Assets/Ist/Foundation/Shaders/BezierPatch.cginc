@@ -5,15 +5,6 @@
 // http://jcgt.org/published/0004/01/04/
 
 
-/*
-// HLSL to GLSL
-#define float2 vec2
-#define float3 vec3
-#define float3 vec3
-#define lerp mix
-#define frac fract
-*/
-
 
 struct BezierPatch
 {
@@ -50,36 +41,36 @@ void   BPTransform(inout BezierPatch bp, float4x4 m);
 
 void BPSplitU_(inout BezierPatch a, inout BezierPatch b, BezierPatch p, float t, int i)
 {
-    float S = 1.0f - t;
+    float S = 1.0 - t;
     float3 p0 = p.cp[i + 0];
     float3 p1 = p.cp[i + 1];
     float3 p2 = p.cp[i + 2];
     float3 p3 = p.cp[i + 3];
     a.cp[i + 0] = p0;
     a.cp[i + 1] = p0*S + p1*t;
-    a.cp[i + 2] = p0*S*S + p1 * 2.0f * S*t + p2*t*t;
-    a.cp[i + 3] = p0*S*S*S + p1 * 3.0f * S*S*t + p2 * 3.0f * S*t*t + p3*t*t*t;
+    a.cp[i + 2] = p0*S*S + p1 * 2.0 * S*t + p2*t*t;
+    a.cp[i + 3] = p0*S*S*S + p1 * 3.0 * S*S*t + p2 * 3.0 * S*t*t + p3*t*t*t;
 
-    b.cp[i + 0] = p0*S*S*S + p1 * 3.0f * S*S*t + p2 * 3.0f * S*t*t + p3*t*t*t;
-    b.cp[i + 1] = p3*t*t + p2 * 2.0f * t*S + p1*S*S;
+    b.cp[i + 0] = p0*S*S*S + p1 * 3.0 * S*S*t + p2 * 3.0 * S*t*t + p3*t*t*t;
+    b.cp[i + 1] = p3*t*t + p2 * 2.0 * t*S + p1*S*S;
     b.cp[i + 2] = p3*t + p2*S;
     b.cp[i + 3] = p3;
 }
 
 void BPSplitV_(inout BezierPatch a, inout BezierPatch b, BezierPatch p, float t, int i)
 {
-    float S = 1.0f - t;
+    float S = 1.0 - t;
     float3 p0 = p.cp[i + 0];
     float3 p1 = p.cp[i + 4];
     float3 p2 = p.cp[i + 8];
     float3 p3 = p.cp[i + 12];
     a.cp[i + 0] = p0;
     a.cp[i + 4] = p0*S + p1*t;
-    a.cp[i + 8] = p0*S*S + p1 * 2.0f * S*t + p2*t*t;
-    a.cp[i + 12] = p0*S*S*S + p1 * 3.0f * S*S*t + p2 * 3.0f * S*t*t + p3*t*t*t;
+    a.cp[i + 8] = p0*S*S + p1 * 2.0 * S*t + p2*t*t;
+    a.cp[i + 12] = p0*S*S*S + p1 * 3.0 * S*S*t + p2 * 3.0 * S*t*t + p3*t*t*t;
 
-    b.cp[i + 0] = p0*S*S*S + p1 * 3.0f * S*S*t + p2 * 3.0f * S*t*t + p3*t*t*t;
-    b.cp[i + 4] = p3*t*t + p2 * 2.0f * t*S + p1*S*S;
+    b.cp[i + 0] = p0*S*S*S + p1 * 3.0 * S*S*t + p2 * 3.0 * S*t*t + p3*t*t*t;
+    b.cp[i + 4] = p3*t*t + p2 * 2.0 * t*S + p1*S*S;
     b.cp[i + 8] = p3*t + p2*S;
     b.cp[i + 12] = p3;
 }
@@ -90,14 +81,14 @@ void BPCropU_(inout BezierPatch dst, BezierPatch src, float s, float t, int i)
     float3 p1 = src.cp[i + 1];
     float3 p2 = src.cp[i + 2];
     float3 p3 = src.cp[i + 3];
-    float T = 1.0f - s;
-    float S = 1.0f - t;
-    s = 1.0f - T;
-    t = 1.0f - S;
-    dst.cp[i + 0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3.0f * T) + p2*(s*s)*(3.0f * T));
-    dst.cp[i + 1] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2.0f * (S*s) + T*t) + p2*s*(2.0f * (t*T) + (s*S)));
-    dst.cp[i + 2] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2.0f * (s*S) + t*T) + p1*S*(2.0f * (T*t) + (S*s)));
-    dst.cp[i + 3] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3.0f * t) + p1*(S*S)*(3.0f * t));
+    float T = 1.0 - s;
+    float S = 1.0 - t;
+    s = 1.0 - T;
+    t = 1.0 - S;
+    dst.cp[i + 0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3.0 * T) + p2*(s*s)*(3.0 * T));
+    dst.cp[i + 1] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2.0 * (S*s) + T*t) + p2*s*(2.0 * (t*T) + (s*S)));
+    dst.cp[i + 2] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2.0 * (s*S) + t*T) + p1*S*(2.0 * (T*t) + (S*s)));
+    dst.cp[i + 3] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3.0 * t) + p1*(S*S)*(3.0 * t));
 }
 
 void BPCropV_(inout BezierPatch dst, BezierPatch src, float s, float t, int i)
@@ -106,32 +97,32 @@ void BPCropV_(inout BezierPatch dst, BezierPatch src, float s, float t, int i)
     float3 p1 = src.cp[i + 4];
     float3 p2 = src.cp[i + 8];
     float3 p3 = src.cp[i + 12];
-    float T = 1.0f - s;
-    float S = 1.0f - t;
-    s = 1.0f - T;
-    t = 1.0f - S;
-    dst.cp[i + 0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3.0f * T) + p2*(s*s)*(3.0f * T));
-    dst.cp[i + 4] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2.0f * (S*s) + T*t) + p2*s*(2.0f * (t*T) + (s*S)));
-    dst.cp[i + 8] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2.0f * (s*S) + t*T) + p1*S*(2.0f * (T*t) + (S*s)));
-    dst.cp[i + 12] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3.0f * t) + p1*(S*S)*(3.0f * t));
+    float T = 1.0 - s;
+    float S = 1.0 - t;
+    s = 1.0 - T;
+    t = 1.0 - S;
+    dst.cp[i + 0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3.0 * T) + p2*(s*s)*(3.0 * T));
+    dst.cp[i + 4] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2.0 * (S*s) + T*t) + p2*s*(2.0 * (t*T) + (s*S)));
+    dst.cp[i + 8] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2.0 * (s*S) + t*T) + p1*S*(2.0 * (T*t) + (S*s)));
+    dst.cp[i + 12] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3.0 * t) + p1*(S*S)*(3.0 * t));
 }
 
 float3 BPEvaluate_(float t, float3 cp[4])
 {
-    float it = 1.0f - t;
+    float it = 1.0 - t;
     return cp[0] * (it*it*it)
-        + cp[1] * (3.0f*(it*it*t))
-        + cp[2] * (3.0f*(it*t*t))
+        + cp[1] * (3.0*(it*it*t))
+        + cp[2] * (3.0*(it*t*t))
         + cp[3] * (t*t*t);
 }
 
 float3 BPEvaluateD_(float t, float3 cp[4])
 {
     float t2 = t * t;
-    return cp[0] * (3.0f * t2 *-1.0f + 2.0f * t * 3.0f - 3.0f)
-        + cp[1] * (3.0f * t2 * 3.0f + 2.0f * t *-6.0f + 3.0f)
-        + cp[2] * (3.0f * t2 *-3.0f + 2.0f * t * 3.0f)
-        + cp[3] * (3.0f * t2 * 1.0f);
+    return cp[0] * (3.0 * t2 *-1.0 + 2.0 * t * 3.0 - 3.0)
+        + cp[1] * (3.0 * t2 * 3.0 + 2.0 * t *-6.0 + 3.0)
+        + cp[2] * (3.0 * t2 *-3.0 + 2.0 * t * 3.0)
+        + cp[3] * (3.0 * t2 * 1.0);
 }
 
 

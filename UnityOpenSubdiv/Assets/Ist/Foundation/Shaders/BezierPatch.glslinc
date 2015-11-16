@@ -1,0 +1,590 @@
+// ready to use for glslsandbox
+
+// HLSL to GLSL
+#define float2 vec2
+#define float3 vec3
+#define float3 vec3
+#define float4 vec4
+#define float3x3 mat3
+#define float4x4 mat4
+#define lerp mix
+#define frac fract
+
+
+
+float4x4 ZAlign(float3 pos, float3 dir, float3 up)
+{
+    float3 z = dir;
+    float3 y = normalize(cross(dir, up));
+    float3 x = cross(y, dir);
+
+    float4x4 rot = float4x4(
+        x.x, y.x, z.x, 0.0,
+        x.y, y.y, z.y, 0.0,
+        x.z, y.z, z.z, 0.0,
+        0.0, 0.0, 0.0, 1.0
+        );
+    float4x4 trs = float4x4(
+        1.0, 0.0, 0.0, -pos.x,
+        0.0, 1.0, 0.0, -pos.y,
+        0.0, 0.0, 1.0, -pos.z,
+        0.0, 0.0, 0.0, 1.0
+        );
+    return rot * trs;
+}
+float4x4 ZAlign(float3 pos, float3 dir)
+{
+    float3 z = dir;
+
+    int plane = 0;
+    if (abs(z[1]) < abs(z[plane])) plane = 1;
+    if (abs(z[2]) < abs(z[plane])) plane = 2;
+
+    float3 up = float3(0.0);
+    if (plane == 0) up.x = 1.0;
+    if (plane == 1) up.y = 1.0;
+    if (plane == 2) up.z = 1.0;
+
+    return ZAlign(pos, dir, up);
+}
+
+
+
+struct BezierPatch
+{
+    float3 cp[16];
+};
+
+// --------------------------------------------------------------------
+// prototypes
+
+void   BPCopy(out BezierPatch dst, BezierPatch src);
+float3 BPGet(BezierPatch bp, int x, int y);
+void   BPGetMinMax(BezierPatch bp, out float3 o_min, out float3 o_max, float epsilon);
+float3 BPEvaluate(BezierPatch bp, float2 uv);
+float3 BPEvaluateDu(BezierPatch bp, float2 uv);
+float3 BPEvaluateDv(BezierPatch bp, float2 uv);
+float3 BPEvaluateNormal(BezierPatch bp, float2 uv);
+void   BPSplit(BezierPatch bp, out BezierPatch dst[4], float u, float v);
+void   BPSplitU(BezierPatch bp, out BezierPatch dst[2], float u);
+void   BPSplitV(BezierPatch bp, out BezierPatch dst[2], float v);
+void   BPCropU(BezierPatch bp, out BezierPatch dst, float u0, float u1);
+void   BPCropV(BezierPatch bp, out BezierPatch dst, float v0, float v1);
+bool   BPCrop(BezierPatch bp, out BezierPatch dst, float u0, float u1, float v0, float v1);
+float3 BPGetLv(BezierPatch bp);
+float3 BPGetLu(BezierPatch bp);
+
+void   BPTranspose(inout BezierPatch bp);
+void   BPTransform(inout BezierPatch bp, float3x3 m);
+void   BPTransform(inout BezierPatch bp, float4x4 m);
+
+
+
+
+// --------------------------------------------------------------------
+// internal functions
+
+
+void BPSplitU_(inout BezierPatch a, inout BezierPatch b, BezierPatch p, float t, int i)
+{
+    float S = 1.0 - t;
+    float3 p0 = p.cp[i + 0];
+    float3 p1 = p.cp[i + 1];
+    float3 p2 = p.cp[i + 2];
+    float3 p3 = p.cp[i + 3];
+    a.cp[i + 0] = p0;
+    a.cp[i + 1] = p0*S + p1*t;
+    a.cp[i + 2] = p0*S*S + p1 * 2.0 * S*t + p2*t*t;
+    a.cp[i + 3] = p0*S*S*S + p1 * 3.0 * S*S*t + p2 * 3.0 * S*t*t + p3*t*t*t;
+
+    b.cp[i + 0] = p0*S*S*S + p1 * 3.0 * S*S*t + p2 * 3.0 * S*t*t + p3*t*t*t;
+    b.cp[i + 1] = p3*t*t + p2 * 2.0 * t*S + p1*S*S;
+    b.cp[i + 2] = p3*t + p2*S;
+    b.cp[i + 3] = p3;
+}
+
+void BPSplitV_(inout BezierPatch a, inout BezierPatch b, BezierPatch p, float t, int i)
+{
+    float S = 1.0 - t;
+    float3 p0 = p.cp[i + 0];
+    float3 p1 = p.cp[i + 4];
+    float3 p2 = p.cp[i + 8];
+    float3 p3 = p.cp[i + 12];
+    a.cp[i + 0] = p0;
+    a.cp[i + 4] = p0*S + p1*t;
+    a.cp[i + 8] = p0*S*S + p1 * 2.0 * S*t + p2*t*t;
+    a.cp[i + 12] = p0*S*S*S + p1 * 3.0 * S*S*t + p2 * 3.0 * S*t*t + p3*t*t*t;
+
+    b.cp[i + 0] = p0*S*S*S + p1 * 3.0 * S*S*t + p2 * 3.0 * S*t*t + p3*t*t*t;
+    b.cp[i + 4] = p3*t*t + p2 * 2.0 * t*S + p1*S*S;
+    b.cp[i + 8] = p3*t + p2*S;
+    b.cp[i + 12] = p3;
+}
+
+void BPCropU_(inout BezierPatch dst, BezierPatch src, float s, float t, int i)
+{
+    float3 p0 = src.cp[i + 0];
+    float3 p1 = src.cp[i + 1];
+    float3 p2 = src.cp[i + 2];
+    float3 p3 = src.cp[i + 3];
+    float T = 1.0 - s;
+    float S = 1.0 - t;
+    s = 1.0 - T;
+    t = 1.0 - S;
+    dst.cp[i + 0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3.0 * T) + p2*(s*s)*(3.0 * T));
+    dst.cp[i + 1] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2.0 * (S*s) + T*t) + p2*s*(2.0 * (t*T) + (s*S)));
+    dst.cp[i + 2] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2.0 * (s*S) + t*T) + p1*S*(2.0 * (T*t) + (S*s)));
+    dst.cp[i + 3] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3.0 * t) + p1*(S*S)*(3.0 * t));
+}
+
+void BPCropV_(inout BezierPatch dst, BezierPatch src, float s, float t, int i)
+{
+    float3 p0 = src.cp[i + 0];
+    float3 p1 = src.cp[i + 4];
+    float3 p2 = src.cp[i + 8];
+    float3 p3 = src.cp[i + 12];
+    float T = 1.0 - s;
+    float S = 1.0 - t;
+    s = 1.0 - T;
+    t = 1.0 - S;
+    dst.cp[i + 0] = (p0*(T*T)*T + p3*(s*s)*s) + (p1*(s*T)*(3.0 * T) + p2*(s*s)*(3.0 * T));
+    dst.cp[i + 4] = (p0*(T*T)*S + p3*(s*s)*t) + (p1*T*(2.0 * (S*s) + T*t) + p2*s*(2.0 * (t*T) + (s*S)));
+    dst.cp[i + 8] = (p3*(t*t)*s + p0*(S*S)*T) + (p2*t*(2.0 * (s*S) + t*T) + p1*S*(2.0 * (T*t) + (S*s)));
+    dst.cp[i + 12] = (p3*(t*t)*t + p0*(S*S)*S) + (p2*(S*t)*(3.0 * t) + p1*(S*S)*(3.0 * t));
+}
+
+float3 BPEvaluate_(float t, float3 cp[4])
+{
+    float it = 1.0 - t;
+    return cp[0] * (it*it*it)
+        + cp[1] * (3.0*(it*it*t))
+        + cp[2] * (3.0*(it*t*t))
+        + cp[3] * (t*t*t);
+}
+
+float3 BPEvaluateD_(float t, float3 cp[4])
+{
+    float t2 = t * t;
+    return cp[0] * (3.0 * t2 *-1.0 + 2.0 * t * 3.0 - 3.0)
+        + cp[1] * (3.0 * t2 * 3.0 + 2.0 * t *-6.0 + 3.0)
+        + cp[2] * (3.0 * t2 *-3.0 + 2.0 * t * 3.0)
+        + cp[3] * (3.0 * t2 * 1.0);
+}
+
+
+
+// --------------------------------------------------------------------
+// public functions
+
+void BPCopy(out BezierPatch dst, BezierPatch src)
+{
+    for(int i=0; i<16; ++i) { dst.cp[i]=src.cp[i]; }
+}
+
+float3 BPGet(BezierPatch bp, int x, int y)
+{
+    return bp.cp[4 * y + x];
+}
+
+void BPGetMinMax(BezierPatch bp, out float3 o_min, out float3 o_max, float epsilon)
+{
+    o_min = o_max = bp.cp[0];
+    for (int i = 1; i < 16; ++i)
+    {
+        o_min = min(o_min, bp.cp[i]);
+        o_max = max(o_max, bp.cp[i]);
+    }
+    o_min -= epsilon;
+    o_max += epsilon;
+}
+
+float3 BPEvaluate(BezierPatch bp, float2 uv)
+{
+    float3 b[4];
+    for (int i = 0; i < 4; ++i) {
+        float3 cp[4];
+        cp[0] = bp.cp[i * 4 + 0];
+        cp[1] = bp.cp[i * 4 + 1];
+        cp[2] = bp.cp[i * 4 + 2];
+        cp[3] = bp.cp[i * 4 + 3];
+        b[i] = BPEvaluate_(uv.x, cp);
+    }
+    return BPEvaluate_(uv.y, b);
+}
+
+float3 BPEvaluateDu(BezierPatch bp, float2 uv)
+{
+    float3 b[4];
+    for (int i = 0; i < 4; ++i) {
+        float3 cp[4];
+        cp[0] = bp.cp[i * 4 + 0];
+        cp[1] = bp.cp[i * 4 + 1];
+        cp[2] = bp.cp[i * 4 + 2];
+        cp[3] = bp.cp[i * 4 + 3];
+        b[i] = BPEvaluateD_(uv.x, cp);
+    }
+    return BPEvaluate_(uv.y, b);
+}
+
+float3 BPEvaluateDv(BezierPatch bp, float2 uv)
+{
+    float3 b[4];
+    for (int i = 0; i < 4; ++i) {
+        float3 cp[4];
+        cp[0] = bp.cp[i * 4 + 0];
+        cp[1] = bp.cp[i * 4 + 1];
+        cp[2] = bp.cp[i * 4 + 2];
+        cp[3] = bp.cp[i * 4 + 3];
+        b[i] = BPEvaluate_(uv.x, cp);
+    }
+    return BPEvaluateD_(uv.y, b);
+}
+
+float3 BPEvaluateNormal(BezierPatch bp, float2 uv)
+{
+    float3 du = BPEvaluateDu(bp, uv);
+    float3 dv = BPEvaluateDv(bp, uv);
+    return normalize(cross(dv, du));
+}
+
+void BPSplit(BezierPatch bp, out BezierPatch dst[4], float u, float v)
+{
+    BezierPatch tmp0, tmp1;
+    int i;
+
+    // split U
+    for (i = 0; i < 4; ++i) {
+        BPSplitU_(tmp0, tmp1, bp, u, i * 4);
+    }
+
+    // uv -> vu
+    BPTranspose(tmp0); // 00 01
+    BPTranspose(tmp1); // 10 11
+
+                      // split V
+    for (i = 0; i < 4; ++i) {
+        BPSplitU_(dst[0], dst[2], tmp0, v, i * 4);
+        BPSplitU_(dst[1], dst[3], tmp1, v, i * 4);
+    }
+
+    // vu -> uv
+    BPTranspose(dst[0]); //00
+    BPTranspose(dst[1]); //10
+    BPTranspose(dst[2]); //01
+    BPTranspose(dst[3]); //11
+}
+
+void BPSplitU(BezierPatch bp, out BezierPatch dst[2], float u)
+{
+    for (int i = 0; i < 4; ++i) {
+        BPSplitU_(dst[0], dst[1], bp, u, i * 4);
+    }
+}
+
+void BPSplitV(BezierPatch bp, out BezierPatch dst[2], float v)
+{
+    for (int i = 0; i < 4; ++i) {
+        BPSplitV_(dst[0], dst[1], bp, v, i);
+    }
+}
+
+void BPCropU(BezierPatch bp, out BezierPatch dst, float u0, float u1)
+{
+    for (int i = 0; i < 4; ++i) {
+        BPCropU_(dst, bp, u0, u1, i*4);
+    }
+}
+
+void BPCropV(BezierPatch bp, out BezierPatch dst, float v0, float v1)
+{
+    for (int i = 0; i < 4; ++i) {
+        BPCropV_(dst, bp, v0, v1, i);
+    }
+}
+
+bool BPCrop(BezierPatch bp, out BezierPatch dst, float u0, float u1, float v0, float v1)
+{
+    BezierPatch tmp;
+    int i;
+    for (i = 0; i < 4; ++i) BPCropU_(tmp, bp, u0, u1, i * 4);
+    for (i = 0; i < 4; ++i) BPCropV_(dst, tmp, v0, v1, i);
+    return true;
+}
+
+float3 BPGetLv(BezierPatch bp)
+{
+    return BPGet(bp, 0, 4 - 1) - BPGet(bp, 0, 0) + BPGet(bp, 4 - 1, 4 - 1) - BPGet(bp, 4 - 1, 0);
+}
+
+float3 BPGetLu(BezierPatch bp)
+{
+    return BPGet(bp, 4 - 1, 0) - BPGet(bp, 0, 0) + BPGet(bp, 4 - 1, 4 - 1) - BPGet(bp, 0, 4 - 1);
+}
+
+
+void BPSwap_(inout BezierPatch bp, int i0, int i1)
+{
+    float3 tmp = bp.cp[i0];
+    bp.cp[i0] = bp.cp[i1];
+    bp.cp[i1] = tmp;
+}
+
+void BPTranspose(inout BezierPatch bp)
+{
+    BPSwap_(bp, 1 * 4 + 0, 0 * 4 + 1);
+    BPSwap_(bp, 2 * 4 + 0, 0 * 4 + 2);
+    BPSwap_(bp, 3 * 4 + 0, 0 * 4 + 3);
+    BPSwap_(bp, 2 * 4 + 1, 1 * 4 + 2);
+    BPSwap_(bp, 3 * 4 + 1, 1 * 4 + 3);
+    BPSwap_(bp, 3 * 4 + 2, 2 * 4 + 3);
+}
+
+void BPTransform(inout BezierPatch bp, float3x3 m)
+{
+    for (int i = 0; i < 16; ++i) {
+        bp.cp[i] = (m * bp.cp[i]).xyz;
+    }
+}
+
+void BPTransform(inout BezierPatch bp, float4x4 m)
+{
+    for (int i = 0; i < 16; ++i) {
+        bp.cp[i] = (m * float4(bp.cp[i], 1.0)).xyz;
+    }
+}
+
+
+
+
+
+
+
+
+// prototypes
+
+struct Ray
+{
+    float3 origin;
+    float3 direction;
+};
+    
+struct BezierPatchHit
+{
+    float t, u, v;
+    int clip_level;
+};
+
+bool BPIRaycast(BezierPatch bp, Ray ray, float zmin, float zmax, out BezierPatchHit hit);
+
+
+
+
+// implements
+
+#ifndef BPI_MAX_STACK_DEPTH
+    #define BPI_MAX_STACK_DEPTH 20
+#endif
+#ifndef BPI_MAX_LOOP
+    #define BPI_MAX_LOOP 1000
+#endif
+#ifndef BPI_EPS
+    #define BPI_EPS 1e-3
+#endif
+
+struct BPIWorkingBuffer
+{
+    BezierPatch source; // input
+    BezierPatch crop;
+    BezierPatch rotate;
+    BezierPatch tmp0;
+    float4 uv_range; // input
+};
+
+
+void BPICrop_(inout BPIWorkingBuffer work, float u0, float u1, float v0, float v1)
+{
+    int i;
+    for (i = 0; i < 4; ++i) {
+        BPCropU_(work.source, work.tmp0, u0, u1, i * 4);
+    }
+    for (i = 0; i < 4; ++i) {
+        BPCropV_(work.tmp0, work.crop, v0, v1, i);
+    }
+}
+
+float3x3 BPIRotate2D_(float3 dx)
+{
+    dx.z = 0.0;
+    dx = normalize(dx);
+    return float3x3(
+        dx.x, dx.y, 0.0,
+       -dx.y, dx.x, 0.0,
+         0.0,  0.0, 1.0
+    );
+}
+
+bool BPITriangleIntersect_(
+    inout float tout, out float uout, out float vout,
+    float3 p0, float3 p1, float3 p2,
+    float3 ray_org, float3 ray_dir)
+{
+    float3 e1, e2;
+    float3 p, s, q;
+
+    e1 = p1 - p0;
+    e2 = p2 - p0;
+    p = cross(ray_dir, e2);
+
+    float det = dot(e1, p);
+    float inv_det = 1.0 / det;
+
+    s = ray_org - p0;
+    q = cross(s, e1);
+
+    float u = dot(s, p) * inv_det;
+    float v = dot(q, ray_dir) * inv_det;
+    float t = dot(e2, q) * inv_det;
+
+    if (u < 0.0 || u > 1.0) return false;
+    if (v < 0.0 || u + v > 1.0) return false;
+    if (t < 0.0 || t > tout) return false;
+
+    tout = t;
+    uout = u;
+    vout = v;
+    return true;
+}
+
+bool BPITestBezierClipL_(
+    BezierPatch patch, inout BezierPatchHit info, float u0, float u1, float v0, float v1, float zmin, float zmax)
+{
+    // TODO (NO_DIRECT)
+    // DIRECT_BILINEAR
+    float3 p0, p1, p2, p3;
+    float3 ray_org = float3(0.0, 0.0, 0.0);
+    float3 ray_dir = float3(0.0, 0.0, 1.0);
+    p0 = patch.cp[0];
+    p1 = patch.cp[3];
+    p2 = patch.cp[12];
+    p3 = patch.cp[15];
+    bool ret = false;
+    float t = zmax, uu = 0.0, vv = 0.0;
+    if (BPITriangleIntersect_(t, uu, vv, p0, p2, p1, ray_org, ray_dir)) {
+        float ww = 1.0 - (uu + vv);
+        float u = ww*0.0 + uu*0.0 + vv*1.0; //00 - 01 - 10
+        float v = ww*0.0 + uu*1.0 + vv*0.0; //00 - 01 - 10
+        info.u = lerp(u0,u1,u);
+        info.v = lerp(v0,v1,v);
+        info.t = t;
+        ret = true;
+    }
+    if (BPITriangleIntersect_(t, uu, vv, p1, p2, p3, ray_org, ray_dir)) {
+        float ww = 1.0 - (uu + vv);
+        float u = ww*1.0 + uu*0.0 + vv*1.0; //10 - 01 - 11
+        float v = ww*0.0 + uu*1.0 + vv*1.0; //10 - 01 - 11
+        info.u = lerp(u0,u1,u);
+        info.v = lerp(v0,v1,v);
+        info.t = t;
+        ret = true;
+    }
+    return ret;
+}
+
+bool BPITestBounds_(inout BPIWorkingBuffer work, inout BezierPatchHit info, float zmin, float zmax, float eps)
+{
+    float3 bmin, bmax;
+    BPGetMinMax(work.source, bmin, bmax, eps*1e-3);
+
+    if (0.0 < bmin.x || bmax.x < 0.0 || 0.0 < bmin.y || bmax.y < 0.0 || bmax.z < zmin || zmax < bmin.z) {
+        return false;
+    }
+    return true;
+}
+
+bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info, float zmin, float zmax, float eps)
+{
+    // non-recursive iteration
+    bool ret = false;
+
+    float4 range_stack[BPI_MAX_STACK_DEPTH];
+    int stack_index = 0;
+    range_stack[0] = work.uv_range;
+
+    for (int i = 0; i < BPI_MAX_LOOP && stack_index >= 0; ++i) {
+
+        // pop a patch range and crop
+        float u0 = range_stack[stack_index].x;
+        float u1 = range_stack[stack_index].y;
+        float v0 = range_stack[stack_index].z;
+        float v1 = range_stack[stack_index].w;
+        --stack_index;
+
+        BPICrop_(work, u0, u1, v0, v1);
+        float3 LU = work.crop.cp[3] - work.crop.cp[0];
+        float3 LV = work.crop.cp[12] - work.crop.cp[0];
+        bool clipU = length(LU) > length(LV);
+
+        float3 bmin, bmax;
+        // rotate and bmin/bmax
+        float3 dx = clipU
+            ? work.crop.cp[12] - work.crop.cp[0] + work.crop.cp[15] - work.crop.cp[3]
+            : work.crop.cp[3] - work.crop.cp[0] + work.crop.cp[15] - work.crop.cp[12];
+        BPCopy(work.rotate, work.crop);
+        BPTransform(work.rotate, BPIRotate2D_(dx));
+        BPGetMinMax(work.rotate, bmin, bmax, eps*1e-3);
+
+        // out
+        if (0.0 < bmin.x || bmax.x < 0.0 || 0.0 < bmin.y || bmax.y < 0.0 || bmax.z < zmin || zmax < bmin.z) {
+            continue;
+        }
+
+        // if it's small enough, test bilinear.
+        if ((bmax.x - bmin.x) < eps || (bmax.y - bmin.y) < eps) {
+            if (BPITestBezierClipL_(work.crop, info, u0, u1, v0, v1, zmin, zmax)) {
+                // info is updated.
+                zmax = info.t;
+                info.clip_level = i;
+                ret = true;
+            }
+            // find another intersection
+            continue;
+        }
+
+        // push children ranges
+        if (clipU) {
+            float um = (u0 + u1)*0.5;
+            range_stack[++stack_index] = float4(u0, um, v0, v1);
+            range_stack[++stack_index] = float4(um, u1, v0, v1);
+        }
+        else {
+            float vm = (v0 + v1)*0.5;
+            range_stack[++stack_index] = float4(u0, u1, v0, vm);
+            range_stack[++stack_index] = float4(u0, u1, vm, v1);
+        }
+        if (stack_index >= BPI_MAX_STACK_DEPTH - 1) break;
+    }
+    return ret;
+}
+
+
+
+
+bool BPIRaycast(BezierPatch bp, Ray ray, float zmin, float zmax, out BezierPatchHit hit)
+{
+    BPIWorkingBuffer work;
+    BPCopy(work.source, bp);
+    work.uv_range = float4(0.0, 1.0, 0.0, 1.0);
+    BPTransform(work.source, ZAlign(ray.origin, ray.direction));
+
+    //// all pixels pass this test when draw aabb as mesh
+    //// (but viable if run on GLSLSandbox etc.)
+    //if (!BPITestBounds_(work, hit, zmin, zmax, BPI_EPS)) {
+    //    return false;
+    //}
+
+    hit.t = zmax;
+    if (BPITestBezierPatch_(work, hit, zmin, zmax, BPI_EPS)) {
+        return true;
+    }
+    return false;
+}

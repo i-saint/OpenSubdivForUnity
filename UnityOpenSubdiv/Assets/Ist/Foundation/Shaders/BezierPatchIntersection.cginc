@@ -53,7 +53,7 @@ void BPICrop_(inout BPIWorkingBuffer work, float u0, float u1, float v0, float v
 
 float3x3 BPIRotate2D_(float3 dx)
 {
-    dx.z = 0;
+    dx.z = 0.0;
     dx = normalize(dx);
     return float3x3(
         dx.x, dx.y, 0.0,
@@ -75,7 +75,7 @@ bool BPITriangleIntersect_(
     p = cross(ray_dir, e2);
 
     float det = dot(e1, p);
-    float inv_det = 1.0f / det;
+    float inv_det = 1.0 / det;
 
     s = ray_org - p0;
     q = cross(s, e1);
@@ -132,7 +132,7 @@ bool BPITestBezierClipL_(
 bool BPITestBounds_(inout BPIWorkingBuffer work, inout BezierPatchHit info, float zmin, float zmax, float eps)
 {
     float3 bmin, bmax;
-    BPGetMinMax(work.source, bmin, bmax, eps*1e-3f);
+    BPGetMinMax(work.source, bmin, bmax, eps*1e-3);
 
     if (0.0 < bmin.x || bmax.x < 0.0 || 0.0 < bmin.y || bmax.y < 0.0 || bmax.z < zmin || zmax < bmin.z) {
         return false;
@@ -172,7 +172,7 @@ bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info,
             : work.crop.cp[3] - work.crop.cp[0] + work.crop.cp[15] - work.crop.cp[12];
         work.rotate = work.crop;
         BPTransform(work.rotate, BPIRotate2D_(dx));
-        BPGetMinMax(work.rotate, bmin, bmax, eps*1e-3f);
+        BPGetMinMax(work.rotate, bmin, bmax, eps*1e-3);
 
         // out
         if (0.0 < bmin.x || bmax.x < 0.0 || 0.0 < bmin.y || bmax.y < 0.0 || bmax.z < zmin || zmax < bmin.z) {
