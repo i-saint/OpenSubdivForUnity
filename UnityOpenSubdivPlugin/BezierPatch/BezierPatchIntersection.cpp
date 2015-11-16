@@ -684,9 +684,9 @@ bool BezierPatchIntersectionImpl::testInternal(BezierPatchHit& info, const Ray& 
         };
         BezierPatch tmp[2];
         BezierPatch children[4];
-        m_patch.SplitU(tmp, 0.5f);
-        tmp[0].SplitV(&children[0], 0.5f);
-        tmp[1].SplitV(&children[2], 0.5f);
+        m_patch.SplitU(tmp[0], tmp[1], 0.5f);
+        tmp[0].SplitV(children[0], children[1], 0.5f);
+        tmp[1].SplitV(children[2], children[3], 0.5f);
 
         int ni = -1;
         for (int i = 0; i < 4; ++i) {
@@ -776,8 +776,8 @@ bool BezierPatchIntersectionImpl::testBezierClipU(UVT& info, const BezierPatch &
 
         if (tw >= 0.4) {
             BezierPatch tmp[2];
-            patch.SplitU(tmp, 0.5);
-            float um = (u0 + u1)*0.5;
+            patch.SplitU(tmp[0], tmp[1], 0.5f);
+            float um = (u0 + u1)*0.5f;
             float ut[] = { u0,um,um,u1 };
 
             int order[2] = { 0,1 };
@@ -851,7 +851,7 @@ bool BezierPatchIntersectionImpl::testBezierClipV(UVT& info, const BezierPatch& 
 
         if (tw >= 0.4) {
             BezierPatch tmp[2];
-            patch.SplitV(tmp, 0.5f);
+            patch.SplitV(tmp[0], tmp[1], 0.5f);
             float vm = (v0 + v1)*0.5f;
             float vt[] = { v0,vm,vm,v1 };
 

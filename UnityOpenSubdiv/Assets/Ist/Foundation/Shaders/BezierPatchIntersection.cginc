@@ -42,13 +42,8 @@ struct BPIWorkingBuffer
 
 void BPICrop_(inout BPIWorkingBuffer work, float u0, float u1, float v0, float v1)
 {
-    int i;
-    for (i = 0; i < 4; ++i) {
-        BPCropU_(work.source, work.tmp0, u0, u1, i * 4);
-    }
-    for (i = 0; i < 4; ++i) {
-        BPCropV_(work.tmp0, work.crop, v0, v1, i);
-    }
+    BPCropU(work.tmp0, work.source, u0, u1);
+    BPCropV(work.crop, work.tmp0, v0, v1);
 }
 
 float3x3 BPIRotate2D_(float3 dx)
