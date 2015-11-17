@@ -1,12 +1,26 @@
 ﻿using System.Collections;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using Ist;
 
 
 [ExecuteInEditMode]
 public class BezierPatchRaycaster : MonoBehaviour
 {
-    public struct DebugData
+    public struct Vertex
+    {
+        public Vector3 vertex;
+        public Vector3 normal;
+    }
+
+    public struct TestEvaluateData
+    {
+        public BezierPatchRaw bpatch;
+    };
+
+    public struct TestRaycastData
     {
         public Vector3 ray_pos;
         public Vector3 ray_dir;
@@ -27,16 +41,110 @@ public class BezierPatchRaycaster : MonoBehaviour
 
     public BezierPatchEditor m_bpatch;
     public ComputeShader m_debug_cs;
-    ComputeBuffer m_cb;
-    DebugData[] m_data = new DebugData[1];
+    ComputeBuffer m_buf_vertices;
+    ComputeBuffer m_buf_eval;
+    ComputeBuffer m_buf_raycast;
+    Vertex[] m_vertices = new Vertex[256];
+    TestEvaluateData[] m_data_eval = new TestEvaluateData[1];
+    TestRaycastData[] m_data_raycast = new TestRaycastData[1];
+    public Mesh m_mesh;
+
+    public void UpdatePreviewMesh()
+    {
+        const int div = 16;
+        const int divsq = div * div;
+        bool update_indices = false;
+
+        if (m_mesh == null)
+        {
+            update_indices = true;
+
+            GameObject go = new GameObject();
+            go.name = "Bezier Patch Mesh";
+            go.GetComponent<Transform>().SetParent(GetComponent<Transform>());
+
+            var mesh_filter = go.AddComponent<MeshFilter>();
+            var mesh_renderer = go.AddComponent<MeshRenderer>();
+#if UNITY_EDITOR
+            mesh_renderer.sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Examples/Materials/Default.mat");
+#endif
+
+            m_mesh = new Mesh();
+            mesh_filter.sharedMesh = m_mesh;
+        }
+
+        // update vertices
+        if (m_debug_cs != null)
+        {
+            if (m_buf_eval == null)
+            {
+                m_buf_eval = new ComputeBuffer(1, 12*16);
+                m_buf_vertices = new ComputeBuffer(256, 24);
+            }
+            m_data_eval[0].bpatch = m_bpatch.GetBezierPatches()[0];
+
+            int k = m_debug_cs.FindKernel("TestEvaluate");
+            m_buf_eval.SetData(m_data_eval);
+            m_debug_cs.SetBuffer(k, "_Vertices", m_buf_vertices);
+            m_debug_cs.SetBuffer(k, "_TestEvaluateData", m_buf_eval);
+            m_debug_cs.Dispatch(k, divsq, 1, 1);
+            m_buf_vertices.GetData(m_vertices);
+            m_buf_eval.GetData(m_data_eval);
+
+            {
+                var vertices = new Vector3[divsq];
+                var normals = new Vector3[divsq];
+                for (int i = 0; i < divsq; ++i)
+                {
+                    vertices[i] = m_vertices[i].vertex;
+                    normals[i] = m_vertices[i].normal;
+                }
+                m_mesh.vertices = vertices;
+                m_mesh.normals = normals;
+            }
+
+
+            if (update_indices)
+            {
+                var indices = new int[divsq * 6];
+                for (int y = 0; y < div - 1; ++y)
+                {
+                    for (int x = 0; x < div - 1; ++x)
+                    {
+                        indices[(y * div + x) * 6 + 0] = (y + 0) * div + (x + 0);
+                        indices[(y * div + x) * 6 + 1] = (y + 1) * div + (x + 0);
+                        indices[(y * div + x) * 6 + 2] = (y + 1) * div + (x + 1);
+
+                        indices[(y * div + x) * 6 + 3] = (y + 0) * div + (x + 0);
+                        indices[(y * div + x) * 6 + 4] = (y + 1) * div + (x + 1);
+                        indices[(y * div + x) * 6 + 5] = (y + 0) * div + (x + 1);
+                    }
+                }
+                m_mesh.SetIndices(indices, MeshTopology.Triangles, 0);
+            }
+        }
+    }
+
 
     void OnDisable()
     {
-        if(m_cb != null)
+        if (m_buf_eval != null)
         {
-            m_cb.Release();
-            m_cb = null;
+            m_buf_eval.Release();
+            m_buf_eval = null;
+            m_buf_vertices.Release();
+            m_buf_vertices = null;
         }
+        if (m_buf_raycast != null)
+        {
+            m_buf_raycast.Release();
+            m_buf_raycast = null;
+        }
+    }
+
+    void Update()
+    {
+        UpdatePreviewMesh();
     }
 
 
@@ -64,22 +172,25 @@ public class BezierPatchRaycaster : MonoBehaviour
 
         if(m_debug_cs != null)
         {
-            if(m_cb == null)
+            if(m_buf_raycast == null)
             {
-                m_cb = new ComputeBuffer(1, SizeOf<DebugData>());
+                m_buf_raycast = new ComputeBuffer(1, SizeOf<TestRaycastData>());
             }
-            m_data[0].ray_pos = ray_pos;
-            m_data[0].ray_dir = ray_dir;
-            m_data[0].bpatch = m_bpatch.GetBezierPatches()[0];
-            m_data[0].bptrans = trans;
-            m_data[0].zmin = 0.0f;
-            m_data[0].zmax = max_distance;
-            m_cb.SetData(m_data);
-            m_debug_cs.Dispatch(0, 1, 0, 0);
-            m_cb.GetData(m_data);
+            m_data_raycast[0].ray_pos = ray_pos;
+            m_data_raycast[0].ray_dir = ray_dir;
+            m_data_raycast[0].bpatch = m_bpatch.GetBezierPatches()[0];
+            m_data_raycast[0].bptrans = trans;
+            m_data_raycast[0].zmin = 0.0f;
+            m_data_raycast[0].zmax = max_distance;
+
+            int k = m_debug_cs.FindKernel("TestRaycast");
+            m_buf_raycast.SetData(m_data_raycast);
+            m_debug_cs.SetBuffer(k, "_TestRaycastData", m_buf_raycast);
+            m_debug_cs.Dispatch(k, 1, 1, 1);
+            m_buf_raycast.GetData(m_data_raycast);
 
             Gizmos.color = Color.blue;
-            Gizmos.DrawWireSphere(m_data[0].hit_pos, 0.05f);
+            Gizmos.DrawWireSphere(m_data_raycast[0].hit_pos, 0.05f);
         }
     }
     

@@ -72,7 +72,7 @@ namespace Ist
             dst.cp00 = cp[ 0]; dst.cp01 = cp[ 1]; dst.cp02 = cp[ 2]; dst.cp03 = cp[ 3];
             dst.cp04 = cp[ 4]; dst.cp05 = cp[ 5]; dst.cp06 = cp[ 6]; dst.cp07 = cp[ 7];
             dst.cp08 = cp[ 8]; dst.cp09 = cp[ 9]; dst.cp10 = cp[10]; dst.cp11 = cp[11];
-            dst.cp12 = cp[12]; dst.cp13 = cp[13]; dst.cp14 = cp[11]; dst.cp15 = cp[15];
+            dst.cp12 = cp[12]; dst.cp13 = cp[13]; dst.cp14 = cp[14]; dst.cp15 = cp[15];
         }
 
         public void GetAABB(ref BezierPatchAABB dst)

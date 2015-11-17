@@ -1,14 +1,27 @@
-#pragma kernel Test1
+#pragma kernel TestEvaluate
+#pragma kernel TestRaycast
 
 #include "../../Ist/Foundation/Shaders/Math.cginc"
 #include "../../Ist/Foundation/Shaders/Geometry.cginc"
 #include "../../Ist/Foundation/Shaders/BezierPatch.cginc"
 #include "../../Ist/Foundation/Shaders/BezierPatchIntersection.cginc"
 
-struct DebugData
+struct Vertex
+{
+    float3 vertex;
+    float3 normal;
+};
+
+struct TestEvaluateData
+{
+    BezierPatch bp;
+    //float3 bp[16];
+};
+
+struct TestRaycastData
 {
     Ray ray;
-    BezierPatch bpatch;
+    BezierPatch bp;
     float4x4 trans;
     float zmin;
     float zmax;
@@ -17,22 +30,41 @@ struct DebugData
     float3 hit_normal;
 };
 
-StructuredBuffer<BezierPatch>   _BezierPatches;
-StructuredBuffer<AABB>          _AABBs;
-RWStructuredBuffer<DebugData>   _DebugData;
+RWStructuredBuffer<Vertex>              _Vertices;
+StructuredBuffer<TestEvaluateData>      _TestEvaluateData;
+RWStructuredBuffer<TestRaycastData>     _TestRaycastData;
+
 
 [numthreads(1,1,1)]
-void Test1(uint3 dtid : SV_DispatchThreadID)
+void TestEvaluate(uint3 dtid : SV_DispatchThreadID)
 {
-    Ray ray = _DebugData[0].ray;
-    BezierPatch bpatch = _DebugData[0].bpatch;
-    BPTransform(bpatch, _DebugData[0].trans);
-    float zmin = _DebugData[0].zmin;
-    float zmax = _DebugData[0].zmax;
+    uint i = dtid.x;
+
+
+    float span = 1.0 / 15;
+    float2 uv = float2(
+        span * (i % 16),
+        span * (i / 16)
+    );
+    BezierPatch bp = _TestEvaluateData[0].bp;
+    _Vertices[i].vertex = BPEvaluate(bp, uv);
+    _Vertices[i].normal = BPEvaluateNormal(bp, uv);
+
+    //_Vertices[i].vertex = float3(uv.x, 0.0, uv.y);
+}
+
+[numthreads(1,1,1)]
+void TestRaycast(uint3 dtid : SV_DispatchThreadID)
+{
+    Ray ray = _TestRaycastData[0].ray;
+    BezierPatch bp = _TestRaycastData[0].bp;
+    BPTransform(bp, _TestRaycastData[0].trans);
+    float zmin = _TestRaycastData[0].zmin;
+    float zmax = _TestRaycastData[0].zmax;
     BezierPatchHit hit;
 
-    BPIRaycast(bpatch, ray, zmin, zmax, hit);
-    _DebugData[0].hit = hit;
-    _DebugData[0].hit_pos = BPEvaluate(bpatch, float2(hit.u, hit.v));
-    _DebugData[0].hit_normal = BPEvaluateNormal(bpatch, float2(hit.u, hit.v));
+    BPIRaycast(bp, ray, zmin, zmax, hit);
+    _TestRaycastData[0].hit = hit;
+    _TestRaycastData[0].hit_pos = BPEvaluate(bp, float2(hit.u, hit.v));
+    _TestRaycastData[0].hit_normal = BPEvaluateNormal(bp, float2(hit.u, hit.v));
 }

@@ -11,8 +11,8 @@ namespace Ist
     {
         [SerializeField] BezierPatch m_bpatch = new BezierPatch();
         [SerializeField] bool m_lock;
-        [HideInInspector] [SerializeField] Transform[] m_cpobj;
-        [HideInInspector] [SerializeField] Mesh m_mesh;
+        [SerializeField] Transform[] m_cpobj;
+        [SerializeField] Mesh m_mesh;
         BezierPatchRaw[] m_bpatch_raw;
         BezierPatchAABB[] m_aabb;
 
@@ -55,8 +55,10 @@ namespace Ist
     
                 var mesh_filter = go.AddComponent<MeshFilter>();
                 var mesh_renderer = go.AddComponent<MeshRenderer>();
-                mesh_renderer.sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/BezierPatchExample/Materials/Default.mat");
-    
+#if UNITY_EDITOR
+                mesh_renderer.sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Examples/Materials/Default.mat");
+#endif
+
                 m_mesh = new Mesh();
                 mesh_filter.sharedMesh = m_mesh;
             }
