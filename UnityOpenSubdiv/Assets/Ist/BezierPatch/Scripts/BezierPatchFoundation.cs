@@ -47,32 +47,67 @@ namespace Ist
 
         public Vector3 Evaluate(Vector2 uv)
         {
-            return uosBezierPatchEvaluate(ref cp[0], ref uv);
+            return uosBPEvaluate(ref cp[0], ref uv);
         }
 
         public Vector3 EvaluateNormal(Vector2 uv)
         {
-            return uosBezierPatchEvaluateNormal(ref cp[0], ref uv);
+            return uosBPEvaluateNormal(ref cp[0], ref uv);
         }
+
+
+        public void Split(ref BezierPatch dst0, ref BezierPatch dst1, ref BezierPatch dst2, ref BezierPatch dst3, ref Vector2 uv)
+        {
+            uosBPSplit(ref cp[0], ref dst0.cp[0], ref dst1.cp[0], ref dst2.cp[0], ref dst3.cp[0], ref uv);
+        }
+        public void SplitU(ref BezierPatch dst0, ref BezierPatch dst1, float u)
+        {
+            uosBPSplitU(ref cp[0], ref dst0.cp[0], ref dst1.cp[0], u);
+        }
+        public void SplitV(ref BezierPatch dst0, ref BezierPatch dst1, float v)
+        {
+            uosBPSplitV(ref cp[0], ref dst0.cp[0], ref dst1.cp[0], v);
+        }
+
+        public void Crop(ref BezierPatch dst0, ref Vector2 uv0, ref Vector2 uv1)
+        {
+            uosBPCrop(ref cp[0], ref dst0.cp[0], ref uv0, ref uv1);
+        }
+        public void CropU(ref BezierPatch dst0, ref Vector2 uv0, float u0, float u1)
+        {
+            uosBPCropU(ref cp[0], ref dst0.cp[0], u0, u1);
+        }
+        public void CropV(ref BezierPatch dst0, ref Vector2 uv0, float v0, float v1)
+        {
+            uosBPCropV(ref cp[0], ref dst0.cp[0], v0, v1);
+        }
+
 
         public bool Raycast(Vector3 orig, Vector3 dir, float max_distance, ref BezierPatchHit hit)
         {
-            return uosBezierPatchRaycast(ref cp[0], ref orig, ref dir, max_distance, ref hit);
+            return uosBPRaycast(ref cp[0], ref orig, ref dir, max_distance, ref hit);
         }
 
         public bool Raycast(ref Matrix4x4 trans, Vector3 orig, Vector3 dir, float max_distance, ref BezierPatchHit hit)
         {
-            return uosBezierPatchRaycastWithTransform(ref cp[0], ref trans, ref orig, ref dir, max_distance, ref hit);
+            return uosBPRaycastWithTransform(ref cp[0], ref trans, ref orig, ref dir, max_distance, ref hit);
         }
 
 
+        // I HATE C#
         public void GetRawData(ref BezierPatchRaw dst)
         {
-            // I HATE C#
             dst.cp00 = cp[ 0]; dst.cp01 = cp[ 1]; dst.cp02 = cp[ 2]; dst.cp03 = cp[ 3];
             dst.cp04 = cp[ 4]; dst.cp05 = cp[ 5]; dst.cp06 = cp[ 6]; dst.cp07 = cp[ 7];
             dst.cp08 = cp[ 8]; dst.cp09 = cp[ 9]; dst.cp10 = cp[10]; dst.cp11 = cp[11];
             dst.cp12 = cp[12]; dst.cp13 = cp[13]; dst.cp14 = cp[14]; dst.cp15 = cp[15];
+        }
+        public void SetRawData(ref BezierPatchRaw src)
+        {
+            cp[ 0] = src.cp00; cp[ 1] = src.cp01; cp[ 2] = src.cp02; cp[ 3] = src.cp03;
+            cp[ 4] = src.cp04; cp[ 5] = src.cp05; cp[ 6] = src.cp06; cp[ 7] = src.cp07;
+            cp[ 8] = src.cp08; cp[ 9] = src.cp09; cp[10] = src.cp10; cp[11] = src.cp11;
+            cp[12] = src.cp12; cp[13] = src.cp13; cp[14] = src.cp14; cp[15] = src.cp15;
         }
 
         public void GetAABB(ref BezierPatchAABB dst)
@@ -106,16 +141,27 @@ namespace Ist
 
 
         [DllImport("UnityOpenSubdiv")]
-        static extern Vector3 uosBezierPatchEvaluate(ref Vector3 bp, ref Vector2 uv);
+        static extern Vector3 uosBPEvaluate(ref Vector3 bp, ref Vector2 uv);
+        [DllImport("UnityOpenSubdiv")]
+        static extern Vector3 uosBPEvaluateNormal(ref Vector3 bp, ref Vector2 uv);
 
         [DllImport("UnityOpenSubdiv")]
-        static extern Vector3 uosBezierPatchEvaluateNormal(ref Vector3 bp, ref Vector2 uv);
+        static extern Vector3 uosBPSplit(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, ref Vector3 dst2, ref Vector3 dst3, ref Vector2 uv);
+        [DllImport("UnityOpenSubdiv")]
+        static extern Vector3 uosBPSplitU(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, float u);
+        [DllImport("UnityOpenSubdiv")]
+        static extern Vector3 uosBPSplitV(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, float v);
+        [DllImport("UnityOpenSubdiv")]
+        static extern Vector3 uosBPCrop(ref Vector3 bp, ref Vector3 dst0, ref Vector2 uv0, ref Vector2 uv1);
+        [DllImport("UnityOpenSubdiv")]
+        static extern Vector3 uosBPCropU(ref Vector3 bp, ref Vector3 dst0, float u0, float u1);
+        [DllImport("UnityOpenSubdiv")]
+        static extern Vector3 uosBPCropV(ref Vector3 bp, ref Vector3 dst0, float v0, float v1);
 
         [DllImport("UnityOpenSubdiv")]
-        static extern bool uosBezierPatchRaycast(ref Vector3 bp, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
-
+        static extern bool uosBPRaycast(ref Vector3 bp, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
         [DllImport("UnityOpenSubdiv")]
-        static extern bool uosBezierPatchRaycastWithTransform(ref Vector3 bp, ref Matrix4x4 bptrans, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
+        static extern bool uosBPRaycastWithTransform(ref Vector3 bp, ref Matrix4x4 bptrans, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
         #endregion
     }
 }

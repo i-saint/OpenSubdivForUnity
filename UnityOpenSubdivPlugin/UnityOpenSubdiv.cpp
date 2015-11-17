@@ -48,23 +48,48 @@ uosCLinkage uosExport void uosDestroyContext(uosContext* ctx)
 
 
 
-uosCLinkage uosExport cfloat3 uosBezierPatchEvaluate(const BezierPatch *bp, const float2 *uv)
+uosCLinkage uosExport cfloat3 uosBPEvaluate(const BezierPatch *bp, const float2 *uv)
 {
     return (cfloat3&)bp->Evaluate(*uv);
 }
-
-uosCLinkage uosExport cfloat3 uosBezierPatchEvaluateNormal(const BezierPatch *bp, const float2 *uv)
+uosCLinkage uosExport cfloat3 uosBPEvaluateNormal(const BezierPatch *bp, const float2 *uv)
 {
     return (cfloat3&)bp->EvaluateNormal(*uv);
 }
 
-uosCLinkage uosExport bool uosBezierPatchRaycast(const BezierPatch *bp, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit)
+uosCLinkage uosExport void uosBPSplit(const BezierPatch *bp, BezierPatch *dst0, BezierPatch *dst1, BezierPatch *dst2, BezierPatch *dst3, const float2 *uv)
+{
+    bp->Split(*dst0, *dst1, *dst2, *dst3, *uv);
+}
+uosCLinkage uosExport void uosBPSplitU(const BezierPatch *bp, BezierPatch *dst0, BezierPatch *dst1, float u)
+{
+    bp->SplitU(*dst0, *dst1, u);
+}
+uosCLinkage uosExport void uosBPSplitV(const BezierPatch *bp, BezierPatch *dst0, BezierPatch *dst1, float v)
+{
+    bp->SplitV(*dst0, *dst1, v);
+}
+uosCLinkage uosExport void uosBPCrop(const BezierPatch *bp, BezierPatch *dst, const float2 *uv0, const float2 *uv1)
+{
+    bp->Crop(*dst, *uv0, *uv1);
+}
+uosCLinkage uosExport void uosBPCropU(const BezierPatch *bp, BezierPatch *dst, float u0, float u1)
+{
+    bp->CropU(*dst, u0, u1);
+}
+uosCLinkage uosExport void uosBPCropV(const BezierPatch *bp, BezierPatch *dst, float v0, float v1)
+{
+    bp->CropV(*dst, v0, v1);
+}
+
+
+uosCLinkage uosExport bool uosBPRaycast(const BezierPatch *bp, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit)
 {
     Ray ray = { *orig, *dir };
     return BezierPatchRaycast(*bp, ray, max_distance, *hit);
 }
 
-uosCLinkage uosExport bool uosBezierPatchRaycastWithTransform(const BezierPatch *bp, const float4x4 *bptrans, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit)
+uosCLinkage uosExport bool uosBPRaycastWithTransform(const BezierPatch *bp, const float4x4 *bptrans, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit)
 {
     Ray ray = {*orig, *dir};
     return BezierPatchRaycast(*bp, *bptrans, ray, max_distance, *hit);

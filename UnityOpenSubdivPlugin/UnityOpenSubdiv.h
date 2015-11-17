@@ -28,9 +28,17 @@ uosCLinkage uosExport void          uosDestroyContext(uosContext* ctx);
 
 
 
-uosCLinkage uosExport cfloat3 uosBezierPatchEvaluate(const BezierPatch *bp, const float2 *uv);
-uosCLinkage uosExport cfloat3 uosBezierPatchEvaluateNormal(const BezierPatch *bp, const float2 *uv);
-uosCLinkage uosExport bool uosBezierPatchRaycast(const BezierPatch *bp, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit);
-uosCLinkage uosExport bool uosBezierPatchRaycastWithTransform(const BezierPatch *bp, const float4x4 *bptrans, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit);
+uosCLinkage uosExport cfloat3 uosBPEvaluate(const BezierPatch *bp, const float2 *uv);
+uosCLinkage uosExport cfloat3 uosBPEvaluateNormal(const BezierPatch *bp, const float2 *uv);
+
+uosCLinkage uosExport void uosBPSplit(const BezierPatch *bp, BezierPatch *dst0, BezierPatch *dst1, BezierPatch *dst2, BezierPatch *dst3, const float2 *uv);
+uosCLinkage uosExport void uosBPSplitU(const BezierPatch *bp, BezierPatch *dst0, BezierPatch *dst1, float u);
+uosCLinkage uosExport void uosBPSplitV(const BezierPatch *bp, BezierPatch *dst0, BezierPatch *dst1, float v);
+uosCLinkage uosExport void uosBPCrop(const BezierPatch *bp, BezierPatch *dst, const float2 *uv0, const float2 *uv1);
+uosCLinkage uosExport void uosBPCropU(const BezierPatch *bp, BezierPatch *dst, float u0, float u1);
+uosCLinkage uosExport void uosBPCropV(const BezierPatch *bp, BezierPatch *dst, float v0, float v1);
+
+uosCLinkage uosExport bool uosBPRaycast(const BezierPatch *bp, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit);
+uosCLinkage uosExport bool uosBPRaycastWithTransform(const BezierPatch *bp, const float4x4 *bptrans, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit);
 
 #endif // UnityOpenSubdiv_h

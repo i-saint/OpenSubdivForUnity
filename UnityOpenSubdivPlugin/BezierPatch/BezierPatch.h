@@ -24,10 +24,10 @@ public:
     float3 EvaluateDu(const float2& uv) const;
     float3 EvaluateDv(const float2& uv) const;
     float3 EvaluateNormal(const float2& uv) const;
-    void Split(BezierPatch dst[4], float u, float v) const;
+    void Split(BezierPatch &dst0, BezierPatch &dst1, BezierPatch &dst2, BezierPatch &dst3, const float2& uv) const;
     void SplitU(BezierPatch &dst0, BezierPatch &dst1, float u) const;
     void SplitV(BezierPatch &dst0, BezierPatch &dst1, float v) const;
-    void Crop(BezierPatch &dst, float u0, float u1, float v0, float v1) const;
+    void Crop(BezierPatch &dst, const float2& uv0, const float2& uv1) const;
     void CropU(BezierPatch &dst, float u0, float u1) const;
     void CropV(BezierPatch &dst, float v0, float v1) const;
     float3 GetLv() const;

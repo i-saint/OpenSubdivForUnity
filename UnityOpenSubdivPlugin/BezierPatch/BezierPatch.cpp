@@ -144,26 +144,26 @@ float3 BezierPatch::EvaluateNormal(const float2& uv) const
     return normalize(cross(dv, du));
 }
 
-void BezierPatch::Split(BezierPatch dst[4], float u, float v) const
+void BezierPatch::Split(BezierPatch &dst0, BezierPatch &dst1, BezierPatch &dst2, BezierPatch &dst3, const float2& uv) const
 {
     BezierPatch tmp0, tmp1;
 
     // split U
-    SplitU(tmp0, tmp1, u);
+    SplitU(tmp0, tmp1, uv.x);
 
     // uv -> vu
     tmp0.Transpose(); // 00 01
     tmp1.Transpose(); // 10 11
 
     // split V
-    tmp0.SplitU(dst[0], dst[2], v);
-    tmp1.SplitU(dst[1], dst[3], v);
+    tmp0.SplitU(dst0, dst2, uv.y);
+    tmp1.SplitU(dst1, dst3, uv.y);
 
     // vu -> uv
-    dst[0].Transpose(); //00
-    dst[1].Transpose(); //10
-    dst[2].Transpose(); //01
-    dst[3].Transpose(); //11
+    dst0.Transpose(); //00
+    dst1.Transpose(); //10
+    dst2.Transpose(); //01
+    dst3.Transpose(); //11
 }
 
 void BezierPatch::SplitU(BezierPatch &dst0, BezierPatch &dst1, float u) const
@@ -208,11 +208,11 @@ void BezierPatch::SplitV(BezierPatch &dst0, BezierPatch &dst1, float v) const
     }
 }
 
-void BezierPatch::Crop(BezierPatch &dst, float u0, float u1, float v0, float v1) const
+void BezierPatch::Crop(BezierPatch &dst, const float2& uv0, const float2& uv1) const
 {
     BezierPatch tmp;
-    CropU(tmp, u0, u1);
-    tmp.CropV(dst, v0, v1);
+    CropU(tmp, uv0.x, uv1.x);
+    tmp.CropV(dst, uv0.y, uv1.y);
 }
 
 void BezierPatch::CropU(BezierPatch &dst, float u0, float u1) const
