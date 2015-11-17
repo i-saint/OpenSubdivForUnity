@@ -4,9 +4,6 @@
 class BezierPatch
 {
 public:
-    static const int N = 4;
-    static const int Ncp = N * N;
-
     BezierPatch();
     BezierPatch(const float3 *p);
     BezierPatch(const BezierPatch &other);
@@ -30,9 +27,9 @@ public:
     void Split(BezierPatch dst[4], float u, float v) const;
     void SplitU(BezierPatch &dst0, BezierPatch &dst1, float u) const;
     void SplitV(BezierPatch &dst0, BezierPatch &dst1, float v) const;
+    void Crop(BezierPatch &dst, float u0, float u1, float v0, float v1) const;
     void CropU(BezierPatch &dst, float u0, float u1) const;
     void CropV(BezierPatch &dst, float v0, float v1) const;
-    void Crop(BezierPatch &dst, float u0, float u1, float v0, float v1) const;
     float3 GetLv() const;
     float3 GetLu() const;
 
@@ -44,11 +41,11 @@ public:
     template<class F>
     void ForEach(const F &f)
     {
-        for (int i = 0; i < Ncp; ++i) { f(m_cp[i]); }
+        for (int i = 0; i < 16; ++i) { f(m_cp[i]); }
     }
 
 private:
-    float3 m_cp[Ncp];
+    float3 m_cp[16];
 };
 
 

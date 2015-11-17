@@ -29,7 +29,7 @@ BezierPatch::BezierPatch()
 
 BezierPatch::BezierPatch(const float3 *p)
 {
-    for (int i = 0; i < Ncp; ++i)
+    for (int i = 0; i < 16; ++i)
     {
         m_cp[i] = p[i];
     }
@@ -37,7 +37,7 @@ BezierPatch::BezierPatch(const float3 *p)
 
 BezierPatch::BezierPatch(const BezierPatch &v)
 {
-    for (int i = 0; i < Ncp; ++i)
+    for (int i = 0; i < 16; ++i)
     {
         m_cp[i] = v[i];
     }
@@ -45,7 +45,7 @@ BezierPatch::BezierPatch(const BezierPatch &v)
 
 BezierPatch::BezierPatch(const BezierPatch &v, const float3x3 &m)
 {
-    for (int i = 0; i < Ncp; ++i)
+    for (int i = 0; i < 16; ++i)
     {
         m_cp[i] = m * v[i];
     }
@@ -53,7 +53,7 @@ BezierPatch::BezierPatch(const BezierPatch &v, const float3x3 &m)
 
 BezierPatch::BezierPatch(const BezierPatch &v, const float4x4 &m)
 {
-    for (int i = 0; i < Ncp; ++i)
+    for (int i = 0; i < 16; ++i)
     {
         m_cp[i] = float3(m * float4(v[i], 1.0f));
     }
@@ -61,7 +61,7 @@ BezierPatch::BezierPatch(const BezierPatch &v, const float4x4 &m)
 
 BezierPatch::BezierPatch(const BezierPatch &v, float u0, float u1, float v0, float v1)
 {
-    for (int i = 0; i < Ncp; ++i) { m_cp[i] = v[i]; }
+    for (int i = 0; i < 16; ++i) { m_cp[i] = v[i]; }
 
     BezierPatch tmp;
     CropU(tmp, u0, u1);
@@ -70,19 +70,19 @@ BezierPatch::BezierPatch(const BezierPatch &v, float u0, float u1, float v0, flo
 
 const float3& BezierPatch::Get(int i, int j) const
 {
-    return m_cp[N*j + i];
+    return m_cp[4*j + i];
 }
 
 void BezierPatch::Set(int i, int j, const float3& v)
 {
-    m_cp[N*j + i] = v;
+    m_cp[4*j + i] = v;
 }
 
 
 float3 BezierPatch::GetMin() const
 {
     float3 min_ = m_cp[0];
-    for (int i = 1; i < Ncp; ++i) {
+    for (int i = 1; i < 16; ++i) {
         min_ = min(min_, m_cp[i]);
     }
     return min_;
@@ -91,7 +91,7 @@ float3 BezierPatch::GetMin() const
 float3 BezierPatch::GetMax() const
 {
     float3 max_ = m_cp[0];
-    for (int i = 1; i < Ncp; ++i) {
+    for (int i = 1; i < 16; ++i) {
         max_ = max(max_, m_cp[i]);
     }
     return max_;
@@ -100,7 +100,7 @@ float3 BezierPatch::GetMax() const
 void BezierPatch::GetMinMax(float3 &o_min, float3 &o_max, float epsilon) const
 {
     o_min = o_max = m_cp[0];
-    for (int i = 1; i < Ncp; ++i)
+    for (int i = 1; i < 16; ++i)
     {
         o_min = min(o_min, m_cp[i]);
         o_max = max(o_max, m_cp[i]);
@@ -112,27 +112,27 @@ void BezierPatch::GetMinMax(float3 &o_min, float3 &o_max, float epsilon) const
 
 float3 BezierPatch::Evaluate(const float2& uv) const
 {
-    float3 b[N];
-    for (int i = 0; i < N; ++i) {
-        b[i] = BPEvaluate(uv.x, m_cp + i*N);
+    float3 b[4];
+    for (int i = 0; i < 4; ++i) {
+        b[i] = BPEvaluate(uv.x, m_cp + i*4);
     }
     return BPEvaluate(uv.y, b);
 }
 
 float3 BezierPatch::EvaluateDu(const float2& uv) const
 {
-    float3 b[N];
-    for (int i = 0; i < N; ++i) {
-        b[i] = BPEvaluateD(uv.x, m_cp + i*N);
+    float3 b[4];
+    for (int i = 0; i < 4; ++i) {
+        b[i] = BPEvaluateD(uv.x, m_cp + i*4);
     }
     return BPEvaluate(uv.y, b);
 }
 
 float3 BezierPatch::EvaluateDv(const float2& uv) const
 {
-    float3 b[N];
-    for (int i = 0; i < N; ++i) {
-        b[i] = BPEvaluate(uv.x, m_cp + i*N);
+    float3 b[4];
+    for (int i = 0; i < 4; ++i) {
+        b[i] = BPEvaluate(uv.x, m_cp + i*4);
     }
     return BPEvaluateD(uv.y, b);
 }
@@ -208,6 +208,13 @@ void BezierPatch::SplitV(BezierPatch &dst0, BezierPatch &dst1, float v) const
     }
 }
 
+void BezierPatch::Crop(BezierPatch &dst, float u0, float u1, float v0, float v1) const
+{
+    BezierPatch tmp;
+    CropU(tmp, u0, u1);
+    tmp.CropV(dst, v0, v1);
+}
+
 void BezierPatch::CropU(BezierPatch &dst, float u0, float u1) const
 {
     float s = u0;
@@ -250,33 +257,26 @@ void BezierPatch::CropV(BezierPatch &dst, float v0, float v1) const
     }
 }
 
-void BezierPatch::Crop(BezierPatch &dst, float u0, float u1, float v0, float v1) const
-{
-    BezierPatch tmp;
-    CropU(tmp, u0, u1);
-    tmp.CropV(dst, v0, v1);
-}
-
 float3 BezierPatch::GetLv() const
 {
-    return Get(0, N - 1) - Get(0, 0) + Get(N - 1, N - 1) - Get(N - 1, 0);
+    return Get(0, 4 - 1) - Get(0, 0) + Get(4 - 1, 4 - 1) - Get(4 - 1, 0);
 }
 
 float3 BezierPatch::GetLu() const
 {
-    return Get(N - 1, 0) - Get(0, 0) + Get(N - 1, N - 1) - Get(0, N - 1);
+    return Get(4 - 1, 0) - Get(0, 0) + Get(4 - 1, 4 - 1) - Get(0, 4 - 1);
 }
 
 
 
 void BezierPatch::Transpose()
 {
-    std::swap(m_cp[1 * N + 0], m_cp[0 * N + 1]);
-    std::swap(m_cp[2 * N + 0], m_cp[0 * N + 2]);
-    std::swap(m_cp[3 * N + 0], m_cp[0 * N + 3]);
-    std::swap(m_cp[2 * N + 1], m_cp[1 * N + 2]);
-    std::swap(m_cp[3 * N + 1], m_cp[1 * N + 3]);
-    std::swap(m_cp[3 * N + 2], m_cp[2 * N + 3]);
+    std::swap(m_cp[1 * 4 + 0], m_cp[0 * 4 + 1]);
+    std::swap(m_cp[2 * 4 + 0], m_cp[0 * 4 + 2]);
+    std::swap(m_cp[3 * 4 + 0], m_cp[0 * 4 + 3]);
+    std::swap(m_cp[2 * 4 + 1], m_cp[1 * 4 + 2]);
+    std::swap(m_cp[3 * 4 + 1], m_cp[1 * 4 + 3]);
+    std::swap(m_cp[3 * 4 + 2], m_cp[2 * 4 + 3]);
 }
 
 void BezierPatch::Transform(const float3x3 &m)

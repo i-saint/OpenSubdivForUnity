@@ -1,0 +1,38 @@
+#pragma kernel Test1
+
+#include "../../Ist/Foundation/Shaders/Math.cginc"
+#include "../../Ist/Foundation/Shaders/Geometry.cginc"
+#include "../../Ist/Foundation/Shaders/BezierPatch.cginc"
+#include "../../Ist/Foundation/Shaders/BezierPatchIntersection.cginc"
+
+struct DebugData
+{
+    Ray ray;
+    BezierPatch bpatch;
+    float4x4 trans;
+    float zmin;
+    float zmax;
+    BezierPatchHit hit;
+    float3 hit_pos;
+    float3 hit_normal;
+};
+
+StructuredBuffer<BezierPatch>   _BezierPatches;
+StructuredBuffer<AABB>          _AABBs;
+RWStructuredBuffer<DebugData>   _DebugData;
+
+[numthreads(1,1,1)]
+void Test1(uint3 dtid : SV_DispatchThreadID)
+{
+    Ray ray = _DebugData[0].ray;
+    BezierPatch bpatch = _DebugData[0].bpatch;
+    BPTransform(bpatch, _DebugData[0].trans);
+    float zmin = _DebugData[0].zmin;
+    float zmax = _DebugData[0].zmax;
+    BezierPatchHit hit;
+
+    BPIRaycast(bpatch, ray, zmin, zmax, hit);
+    _DebugData[0].hit = hit;
+    _DebugData[0].hit_pos = BPEvaluate(bpatch, float2(hit.u, hit.v));
+    _DebugData[0].hit_normal = BPEvaluateNormal(bpatch, float2(hit.u, hit.v));
+}

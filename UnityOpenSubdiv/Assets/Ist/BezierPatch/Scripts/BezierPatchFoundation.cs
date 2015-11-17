@@ -106,16 +106,16 @@ namespace Ist
 
 
         [DllImport("UnityOpenSubdiv")]
-        static extern Vector3 uosBezierPatchEvaluate(ref Vector3 bpatch, ref Vector2 uv);
+        static extern Vector3 uosBezierPatchEvaluate(ref Vector3 bp, ref Vector2 uv);
 
         [DllImport("UnityOpenSubdiv")]
-        static extern Vector3 uosBezierPatchEvaluateNormal(ref Vector3 bpatch, ref Vector2 uv);
+        static extern Vector3 uosBezierPatchEvaluateNormal(ref Vector3 bp, ref Vector2 uv);
 
         [DllImport("UnityOpenSubdiv")]
-        static extern bool uosBezierPatchRaycast(ref Vector3 bpatch, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
+        static extern bool uosBezierPatchRaycast(ref Vector3 bp, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
 
         [DllImport("UnityOpenSubdiv")]
-        static extern bool uosBezierPatchRaycastWithTransform(ref Vector3 bpatch, ref Matrix4x4 bptrans, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
+        static extern bool uosBezierPatchRaycastWithTransform(ref Vector3 bp, ref Matrix4x4 bptrans, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
         #endregion
     }
 }

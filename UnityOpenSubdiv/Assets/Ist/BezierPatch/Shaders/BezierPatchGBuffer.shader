@@ -85,6 +85,26 @@ gbuffer_out frag_gbuffer(vs_out I)
 
     uint iid = I.instance_id;
     BezierPatch bpatch = _BezierPatches[iid];
+/*
+    // just fot test
+    bpatch.cp[ 0] = float3(-1.0 , 0.0, -1.0 );
+    bpatch.cp[ 1] = float3(-0.33, 0.0, -1.0 );
+    bpatch.cp[ 2] = float3( 0.33, 0.0, -1.0 );
+    bpatch.cp[ 3] = float3( 1.0 , 0.0, -1.0 );
+    bpatch.cp[ 4] = float3(-1.0 , 0.0, -0.33);
+    bpatch.cp[ 5] = float3(-0.33, 1.0, -0.33);
+    bpatch.cp[ 6] = float3( 0.33, 0.0, -0.33);
+    bpatch.cp[ 7] = float3( 1.0 , 0.0, -0.33);
+    bpatch.cp[ 8] = float3(-1.0 , 0.0,  0.33);
+    bpatch.cp[ 9] = float3(-0.33, 0.0,  0.33);
+    bpatch.cp[10] = float3( 0.33, 0.0,  0.33);
+    bpatch.cp[11] = float3( 1.0 , 0.0,  0.33);
+    bpatch.cp[12] = float3(-1.0 , 0.0,  1.0 );
+    bpatch.cp[13] = float3(-0.33, 0.0,  1.0 );
+    bpatch.cp[14] = float3( 0.33, 0.0,  1.0 );
+    bpatch.cp[15] = float3( 1.0 , 0.0,  1.0 );
+*/
+
     AABB aabb = _AABBs[iid];
     float zmin = 0.0;
     float zmax = length(aabb.extents) * 2.0;
@@ -101,15 +121,11 @@ gbuffer_out frag_gbuffer(vs_out I)
         //discard;
     }
 
-    //float3 bp_pos = ray.origin + ray.direction * hit.t;
-    //float3 bp_normal = BPEvaluateNormal(bpatch, float2(hit.u, hit.v));
-    float3 bp_pos = BPEvaluate(bpatch, spos);
-    float3 bp_normal = BPEvaluateNormal(bpatch, spos);
-
+    float3 bp_pos = ray.origin + ray.direction * hit.t;
+    float3 bp_normal = BPEvaluateNormal(bpatch, float2(hit.u, hit.v));
 
     gbuffer_out O;
     O.diffuse = _Color;
-    O.diffuse.rgb = abs(bp_pos);
 
     O.spec_smoothness = float4(_SpecularColor.rgb, _Glossiness);
     O.normal = float4(bp_normal*0.5+0.5, 1.0);

@@ -85,7 +85,8 @@ static inline float3x3 BPRotate2D(const float3 &dx)
     return float3x3(
         x[0], x[1], 0.0f,
         y[0], y[1], 0.0f,
-        0.0f, 0.0f, 1.0f );
+        0.0f, 0.0f, 1.0f
+    );
 }
 
 
@@ -643,20 +644,19 @@ bool BezierPatchIntersectionImpl::testInternal(BezierPatchHit& info, const Ray& 
     bool bRet = false;
     UVT uvt;
     uvt.failFlag = 0;
-    {
-        if (testBezierPatch(uvt, patch, tmin, tmax, m_eps)) {
-            float t = uvt.t;
-            float u = uvt.u;
-            float v = uvt.v;
 
-            info.t = t;
-            info.uv.x = u;
-            info.uv.y = v;
-            info.clip_level = uvt.level;
-            tmax = t;
-            bRet = true;
-            trace("hit t = %f, uv = (%f, %f)\n", t, u, v);
-        }
+    if (testBezierPatch(uvt, patch, tmin, tmax, m_eps)) {
+        float t = uvt.t;
+        float u = uvt.u;
+        float v = uvt.v;
+
+        info.t = t;
+        info.uv.x = u;
+        info.uv.y = v;
+        info.clip_level = uvt.level;
+        tmax = t;
+        bRet = true;
+        trace("hit t = %f, uv = (%f, %f)\n", t, u, v);
     }
 
     if (uvt.failFlag == 0 || m_wcpFlag == 0) {

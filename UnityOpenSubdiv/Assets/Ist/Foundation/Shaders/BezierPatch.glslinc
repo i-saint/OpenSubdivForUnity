@@ -458,24 +458,28 @@ bool BPITestBounds_(inout BPIWorkingBuffer work, inout BezierPatchHit info, floa
     return true;
 }
 
+void swap(inout float4 a, inout float4 b)
+{
+    float4 t = a;
+    a = b;
+    b = a;
+}
+
 bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info, float zmin, float zmax, float eps)
 {
     // non-recursive iteration
     bool ret = false;
 
-    float4 range_stack[BPI_MAX_STACK_DEPTH];
-    int stack_index = 0;
+    float4 range_stack[2];
     range_stack[0] = work.uv_range;
 
-    for (int i = 0; i < BPI_MAX_LOOP && stack_index >= 0; ++i) {
-
-        // pop a patch range and crop
-        float u0 = range_stack[stack_index].x;
-        float u1 = range_stack[stack_index].y;
-        float v0 = range_stack[stack_index].z;
-        float v1 = range_stack[stack_index].w;
-        --stack_index;
-
+    for (int i = 0; i < BPI_MAX_LOOP; ++i) {
+        float u0 = range_stack[0].x;
+        float u1 = range_stack[0].y;
+        float v0 = range_stack[0].z;
+        float v1 = range_stack[0].w;
+        swap(range_stack[0], range_stack[1]);
+        
         BPICrop_(work, u0, u1, v0, v1);
         float3 LU = work.crop.cp[3] - work.crop.cp[0];
         float3 LV = work.crop.cp[12] - work.crop.cp[0];
@@ -503,6 +507,8 @@ bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info,
                 info.clip_level = i;
                 ret = true;
             }
+                zmax = info.t;
+                info.clip_level = i;
             // find another intersection
             continue;
         }
@@ -510,13 +516,13 @@ bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info,
         // push children ranges
         if (clipU) {
             float um = (u0 + u1)*0.5;
-            range_stack[++stack_index] = float4(u0, um, v0, v1);
-            range_stack[++stack_index] = float4(um, u1, v0, v1);
+            range_stack[0] = float4(u0, um, v0, v1);
+            range_stack[1] = float4(um, u1, v0, v1);
         }
         else {
             float vm = (v0 + v1)*0.5;
-            range_stack[++stack_index] = float4(u0, u1, v0, vm);
-            range_stack[++stack_index] = float4(u0, u1, vm, v1);
+            range_stack[0] = float4(u0, u1, v0, vm);
+            range_stack[1] = float4(u0, u1, vm, v1);
         }
         if (stack_index >= BPI_MAX_STACK_DEPTH - 1) break;
     }

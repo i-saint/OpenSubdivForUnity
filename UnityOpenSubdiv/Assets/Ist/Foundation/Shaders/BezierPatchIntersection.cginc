@@ -24,7 +24,7 @@ bool BPIRaycast(BezierPatch bp, Ray ray, float zmin, float zmax, out BezierPatch
     #define BPI_MAX_STACK_DEPTH 20
 #endif
 #ifndef BPI_MAX_LOOP
-    #define BPI_MAX_LOOP 1000
+    #define BPI_MAX_LOOP 100
 #endif
 #ifndef BPI_EPS
     #define BPI_EPS 1e-3
@@ -48,11 +48,11 @@ void BPICrop_(inout BPIWorkingBuffer work, float u0, float u1, float v0, float v
 
 float3x3 BPIRotate2D_(float3 dx)
 {
-    dx.z = 0.0;
-    dx = normalize(dx);
+    float2 x = normalize(dx.xy);
+    float2 y = float2(-x[1], x[0]);
     return float3x3(
-        dx.x, dx.y, 0.0,
-       -dx.y, dx.x, 0.0,
+        x[0], x[1], 0.0,
+        y[0], y[1], 0.0,
          0.0,  0.0, 1.0
     );
 }

@@ -134,7 +134,6 @@ float3 BPEvaluateNormal(BezierPatch bp, float2 uv)
 void BPSplit(BezierPatch bp, out BezierPatch dst[4], float u, float v)
 {
     BezierPatch tmp0, tmp1;
-    int i;
 
     // split U
     BPSplitU(bp, tmp0, tmp1, u);
