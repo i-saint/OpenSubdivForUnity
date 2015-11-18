@@ -1,4 +1,6 @@
 #pragma kernel TestEvaluate
+#pragma kernel TestSplit
+#pragma kernel TestCrop
 #pragma kernel TestRaycast
 
 #include "../../Ist/Foundation/Shaders/Math.cginc"
@@ -15,7 +17,21 @@ struct Vertex
 struct TestEvaluateData
 {
     BezierPatch bp;
-    //float3 bp[16];
+};
+
+struct TestSplitData
+{
+    BezierPatch bp;
+    BezierPatch dst[4];
+    float2 uv;
+};
+
+struct TestCropData
+{
+    BezierPatch bp;
+    BezierPatch dst;
+    float2 uv0;
+    float2 uv1;
 };
 
 struct TestRaycastData
@@ -31,7 +47,9 @@ struct TestRaycastData
 };
 
 RWStructuredBuffer<Vertex>              _Vertices;
-StructuredBuffer<TestEvaluateData>      _TestEvaluateData;
+RWStructuredBuffer<TestEvaluateData>    _TestEvaluateData;
+RWStructuredBuffer<TestSplitData>       _TestSplitData;
+RWStructuredBuffer<TestCropData>        _TestCropData;
 RWStructuredBuffer<TestRaycastData>     _TestRaycastData;
 
 
@@ -49,9 +67,25 @@ void TestEvaluate(uint3 dtid : SV_DispatchThreadID)
     BezierPatch bp = _TestEvaluateData[0].bp;
     _Vertices[i].vertex = BPEvaluate(bp, uv);
     _Vertices[i].normal = BPEvaluateNormal(bp, uv);
-
-    //_Vertices[i].vertex = float3(uv.x, 0.0, uv.y);
 }
+
+
+[numthreads(1,1,1)]
+void TestSplit(uint3 dtid : SV_DispatchThreadID)
+{
+    BPSplit(
+        _TestSplitData[0].bp,
+        _TestSplitData[0].dst[0], _TestSplitData[0].dst[1], _TestSplitData[0].dst[2], _TestSplitData[0].dst[3],
+        _TestSplitData[0].uv);
+}
+
+
+[numthreads(1,1,1)]
+void TestCrop(uint3 dtid : SV_DispatchThreadID)
+{
+    BPCrop(_TestCropData[0].bp, _TestCropData[0].dst, _TestCropData[0].uv0, _TestCropData[0].uv1);
+}
+
 
 [numthreads(1,1,1)]
 void TestRaycast(uint3 dtid : SV_DispatchThreadID)

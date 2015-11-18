@@ -17,14 +17,32 @@ public class BezierPatchRaycaster : MonoBehaviour
 
     public struct TestEvaluateData
     {
-        public BezierPatchRaw bpatch;
+        public BezierPatchRaw bp;
+    };
+
+    public struct TestSplitData
+    {
+        public BezierPatchRaw bp;
+        public BezierPatchRaw dst0;
+        public BezierPatchRaw dst1;
+        public BezierPatchRaw dst2;
+        public BezierPatchRaw dst3;
+        public Vector2 uv;
+    };
+
+    public struct TestCropData
+    {
+        public BezierPatchRaw bp;
+        public BezierPatchRaw dst;
+        public Vector2 uv0;
+        public Vector2 uv1;
     };
 
     public struct TestRaycastData
     {
         public Vector3 ray_pos;
         public Vector3 ray_dir;
-        public BezierPatchRaw bpatch;
+        public BezierPatchRaw bp;
         public Matrix4x4 bptrans;
         public float zmin;
         public float zmax;
@@ -44,11 +62,18 @@ public class BezierPatchRaycaster : MonoBehaviour
     public Mesh m_mesh;
     ComputeBuffer m_buf_vertices;
     ComputeBuffer m_buf_eval;
+    ComputeBuffer m_buf_split;
+    ComputeBuffer m_buf_crop;
     ComputeBuffer m_buf_raycast;
     Vertex[] m_vertices = new Vertex[256];
     TestEvaluateData[] m_data_eval = new TestEvaluateData[1];
+    TestSplitData[] m_data_split = new TestSplitData[1];
+    TestCropData[] m_data_crop = new TestCropData[1];
     TestRaycastData[] m_data_raycast = new TestRaycastData[1];
     public BezierPatch[] m_splited = new BezierPatch[4];
+
+    public bool m_use_compute_shader = false;
+
 
     public void UpdatePreviewMesh()
     {
@@ -82,7 +107,7 @@ public class BezierPatchRaycaster : MonoBehaviour
                 m_buf_eval = new ComputeBuffer(1, 12*16);
                 m_buf_vertices = new ComputeBuffer(256, 24);
             }
-            m_data_eval[0].bpatch = m_bpatch.GetBezierPatches()[0];
+            m_bpatch.bpatch.GetRawData(ref m_data_eval[0].bp);
 
             int k = m_debug_cs.FindKernel("TestEvaluate");
             m_buf_eval.SetData(m_data_eval);
@@ -138,8 +163,32 @@ public class BezierPatchRaycaster : MonoBehaviour
         if(m_bpatch != null)
         {
             var uv = new Vector2(0.5f, 0.5f);
-            m_bpatch.bpatch.Split(
-                ref m_splited[0], ref m_splited[1], ref m_splited[2], ref m_splited[3], ref uv);
+            if (m_use_compute_shader)
+            {
+                if (m_buf_split == null)
+                {
+                    m_buf_split = new ComputeBuffer(1, SizeOf<TestSplitData>());
+                }
+                m_bpatch.bpatch.GetRawData(ref m_data_split[0].bp);
+                m_data_split[0].uv = uv;
+
+                int k = m_debug_cs.FindKernel("TestSplit");
+                m_buf_split.SetData(m_data_split);
+                m_debug_cs.SetBuffer(k, "_TestSplitData", m_buf_split);
+                m_debug_cs.Dispatch(k, 1, 1, 1);
+                m_buf_split.GetData(m_data_split);
+
+                m_splited[0].SetRawData(ref m_data_split[0].dst0);
+                m_splited[1].SetRawData(ref m_data_split[0].dst1);
+                m_splited[2].SetRawData(ref m_data_split[0].dst2);
+                m_splited[3].SetRawData(ref m_data_split[0].dst3);
+            }
+            else
+            {
+                m_bpatch.bpatch.Split(
+                    ref m_splited[0], ref m_splited[1], ref m_splited[2], ref m_splited[3], ref uv);
+
+            }
         }
     }
 
@@ -153,6 +202,16 @@ public class BezierPatchRaycaster : MonoBehaviour
             m_buf_eval = null;
             m_buf_vertices.Release();
             m_buf_vertices = null;
+        }
+        if (m_buf_split != null)
+        {
+            m_buf_split.Release();
+            m_buf_split = null;
+        }
+        if (m_buf_crop != null)
+        {
+            m_buf_crop.Release();
+            m_buf_crop = null;
         }
         if (m_buf_raycast != null)
         {
@@ -197,7 +256,7 @@ public class BezierPatchRaycaster : MonoBehaviour
             }
             m_data_raycast[0].ray_pos = ray_pos;
             m_data_raycast[0].ray_dir = ray_dir;
-            m_data_raycast[0].bpatch = m_bpatch.GetBezierPatches()[0];
+            m_bpatch.bpatch.GetRawData(ref m_data_raycast[0].bp);
             m_data_raycast[0].bptrans = trans;
             m_data_raycast[0].zmin = 0.0f;
             m_data_raycast[0].zmax = max_distance;
@@ -218,8 +277,8 @@ public class BezierPatchRaycaster : MonoBehaviour
             {
                 new Color(1.0f, 0.0f, 0.0f),
                 new Color(0.0f, 1.0f, 0.0f),
-                new Color(0.0f, 0.0f, 0.0f),
-                new Color(0.6f, 0.6f, 0.0f),
+                new Color(0.0f, 0.0f, 1.0f),
+                new Color(0.7f, 0.7f, 0.0f),
             };
             for (int i = 0; i < m_splited.Length; ++i)
             {

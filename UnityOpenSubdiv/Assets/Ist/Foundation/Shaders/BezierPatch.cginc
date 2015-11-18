@@ -20,10 +20,10 @@ float3 BPEvaluate(BezierPatch bp, float2 uv);
 float3 BPEvaluateDu(BezierPatch bp, float2 uv);
 float3 BPEvaluateDv(BezierPatch bp, float2 uv);
 float3 BPEvaluateNormal(BezierPatch bp, float2 uv);
-void   BPSplit(BezierPatch bp, out BezierPatch dst[4], float u, float v);
+void   BPSplit(BezierPatch bp, out BezierPatch dst0, out BezierPatch dst1, out BezierPatch dst2, out BezierPatch dst3, float uv);
 void   BPSplitU(BezierPatch bp, out BezierPatch dst0, out BezierPatch dst1, float t);
 void   BPSplitV(BezierPatch bp, out BezierPatch dst0, out BezierPatch dst1, float t);
-void   BPCrop(BezierPatch bp, out BezierPatch dst, float u0, float u1, float v0, float v1);
+void   BPCrop(BezierPatch bp, out BezierPatch dst, float2 uv0, float2 uv1);
 void   BPCropU(BezierPatch bp, out BezierPatch dst, float u0, float u1);
 void   BPCropV(BezierPatch bp, out BezierPatch dst, float v0, float v1);
 float3 BPGetLv(BezierPatch bp);
@@ -131,26 +131,26 @@ float3 BPEvaluateNormal(BezierPatch bp, float2 uv)
     return normalize(cross(dv, du));
 }
 
-void BPSplit(BezierPatch bp, out BezierPatch dst[4], float u, float v)
+void BPSplit(BezierPatch bp, out BezierPatch dst0, out BezierPatch dst1, out BezierPatch dst2, out BezierPatch dst3, float2 uv)
 {
     BezierPatch tmp0, tmp1;
 
     // split U
-    BPSplitU(bp, tmp0, tmp1, u);
+    BPSplitU(bp, tmp0, tmp1, uv.x);
 
     // uv -> vu
     BPTranspose(tmp0); // 00 01
     BPTranspose(tmp1); // 10 11
 
     // split V
-    BPSplitU(tmp0, dst[0], dst[2], v);
-    BPSplitU(tmp1, dst[1], dst[3], v);
+    BPSplitU(tmp0, dst0, dst2, uv.y);
+    BPSplitU(tmp1, dst1, dst3, uv.y);
 
     // vu -> uv
-    BPTranspose(dst[0]); //00
-    BPTranspose(dst[1]); //10
-    BPTranspose(dst[2]); //01
-    BPTranspose(dst[3]); //11
+    BPTranspose(dst0); //00
+    BPTranspose(dst1); //10
+    BPTranspose(dst2); //01
+    BPTranspose(dst3); //11
 }
 
 void BPSplitU(BezierPatch bp, out BezierPatch dst0, out BezierPatch dst1, float t)
@@ -191,11 +191,11 @@ void BPSplitV(BezierPatch bp, out BezierPatch dst0, out BezierPatch dst1, float 
     }
 }
 
-void BPCrop(BezierPatch bp, out BezierPatch dst, float u0, float u1, float v0, float v1)
+void BPCrop(BezierPatch bp, out BezierPatch dst, float2 uv0, float2 uv1)
 {
     BezierPatch tmp;
-    BPCropU(bp, tmp, u0, u1);
-    BPCropV(tmp, dst, v0, v1);
+    BPCropU(bp, tmp, uv0.x, uv1.x);
+    BPCropV(tmp, dst, uv0.y, uv1.y);
 }
 
 void BPCropU(BezierPatch bp, out BezierPatch dst, float s, float t)
