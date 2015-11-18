@@ -71,8 +71,11 @@ public class BezierPatchRaycaster : MonoBehaviour
     TestCropData[] m_data_crop = new TestCropData[1];
     TestRaycastData[] m_data_raycast = new TestRaycastData[1];
     public BezierPatch[] m_splited = new BezierPatch[4];
+    public BezierPatch m_croped = new BezierPatch();
 
     public bool m_use_compute_shader = false;
+    public bool m_show_splitted = false;
+    public bool m_show_croped = false;
 
 
     public void UpdatePreviewMesh()
@@ -153,6 +156,8 @@ public class BezierPatchRaycaster : MonoBehaviour
 
     void Split()
     {
+        if(m_bpatch == null) { return; }
+
         if (m_splited[0]==null)
         {
             for(int i=0; i<m_splited.Length; ++i)
@@ -160,35 +165,63 @@ public class BezierPatchRaycaster : MonoBehaviour
                 m_splited[i] = new BezierPatch();
             }
         }
-        if(m_bpatch != null)
+
+        var uv = new Vector2(0.5f, 0.5f);
+        if (m_use_compute_shader)
         {
-            var uv = new Vector2(0.5f, 0.5f);
-            if (m_use_compute_shader)
+            if (m_buf_split == null)
             {
-                if (m_buf_split == null)
-                {
-                    m_buf_split = new ComputeBuffer(1, SizeOf<TestSplitData>());
-                }
-                m_bpatch.bpatch.GetRawData(ref m_data_split[0].bp);
-                m_data_split[0].uv = uv;
-
-                int k = m_debug_cs.FindKernel("TestSplit");
-                m_buf_split.SetData(m_data_split);
-                m_debug_cs.SetBuffer(k, "_TestSplitData", m_buf_split);
-                m_debug_cs.Dispatch(k, 1, 1, 1);
-                m_buf_split.GetData(m_data_split);
-
-                m_splited[0].SetRawData(ref m_data_split[0].dst0);
-                m_splited[1].SetRawData(ref m_data_split[0].dst1);
-                m_splited[2].SetRawData(ref m_data_split[0].dst2);
-                m_splited[3].SetRawData(ref m_data_split[0].dst3);
+                m_buf_split = new ComputeBuffer(1, SizeOf<TestSplitData>());
             }
-            else
+            m_bpatch.bpatch.GetRawData(ref m_data_split[0].bp);
+            m_data_split[0].uv = uv;
+
+            int k = m_debug_cs.FindKernel("TestSplit");
+            m_buf_split.SetData(m_data_split);
+            m_debug_cs.SetBuffer(k, "_TestSplitData", m_buf_split);
+            m_debug_cs.Dispatch(k, 1, 1, 1);
+            m_buf_split.GetData(m_data_split);
+
+            m_splited[0].SetRawData(ref m_data_split[0].dst0);
+            m_splited[1].SetRawData(ref m_data_split[0].dst1);
+            m_splited[2].SetRawData(ref m_data_split[0].dst2);
+            m_splited[3].SetRawData(ref m_data_split[0].dst3);
+        }
+        else
+        {
+            m_bpatch.bpatch.Split(
+                ref m_splited[0], ref m_splited[1], ref m_splited[2], ref m_splited[3], ref uv);
+        }
+    }
+
+    void Crop()
+    {
+        if (m_bpatch == null) { return; }
+
+        var uv0 = new Vector2(0.33f, 0.33f);
+        var uv1 = new Vector2(0.66f, 0.66f);
+
+        if (m_use_compute_shader)
+        {
+            if (m_buf_crop == null)
             {
-                m_bpatch.bpatch.Split(
-                    ref m_splited[0], ref m_splited[1], ref m_splited[2], ref m_splited[3], ref uv);
-
+                m_buf_crop = new ComputeBuffer(1, SizeOf<TestCropData>());
             }
+            m_bpatch.bpatch.GetRawData(ref m_data_crop[0].bp);
+            m_data_crop[0].uv0 = uv0;
+            m_data_crop[0].uv1 = uv1;
+
+            int k = m_debug_cs.FindKernel("TestCrop");
+            m_buf_crop.SetData(m_data_crop);
+            m_debug_cs.SetBuffer(k, "_TestCropData", m_buf_crop);
+            m_debug_cs.Dispatch(k, 1, 1, 1);
+            m_buf_crop.GetData(m_data_crop);
+
+            m_croped.SetRawData(ref m_data_crop[0].dst);
+        }
+        else
+        {
+            m_bpatch.bpatch.Crop(ref m_croped, ref uv0, ref uv1);
         }
     }
 
@@ -271,7 +304,7 @@ public class BezierPatchRaycaster : MonoBehaviour
             Gizmos.DrawWireSphere(m_data_raycast[0].hit_pos, 0.05f);
         }
 
-        if (m_splited[0] != null)
+        if (m_show_splitted && m_splited[0] != null)
         {
             Color[] colors = new Color[]
             {
@@ -284,6 +317,11 @@ public class BezierPatchRaycaster : MonoBehaviour
             {
                 m_splited[i].OnDrawGizmo(colors[i]);
             }
+        }
+
+        if (m_show_croped)
+        {
+            m_croped.OnDrawGizmo(new Color(0.7f, 0.0f, 0.7f));
         }
     }
 
@@ -304,9 +342,16 @@ public class BezierPatchRaycaster : MonoBehaviour
 
     void OnGUI()
     {
+        if (m_bpatch == null) { return; }
+
         if (GUI.Button(new Rect(10, 10, 150, 30), "Split"))
         {
             Split();
+        }
+
+        if (GUI.Button(new Rect(10, 50, 150, 30), "Crop"))
+        {
+            Crop();
         }
     }
 }
