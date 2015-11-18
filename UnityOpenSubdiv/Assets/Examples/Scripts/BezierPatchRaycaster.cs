@@ -41,13 +41,14 @@ public class BezierPatchRaycaster : MonoBehaviour
 
     public BezierPatchEditor m_bpatch;
     public ComputeShader m_debug_cs;
+    public Mesh m_mesh;
     ComputeBuffer m_buf_vertices;
     ComputeBuffer m_buf_eval;
     ComputeBuffer m_buf_raycast;
     Vertex[] m_vertices = new Vertex[256];
     TestEvaluateData[] m_data_eval = new TestEvaluateData[1];
     TestRaycastData[] m_data_raycast = new TestRaycastData[1];
-    public Mesh m_mesh;
+    public BezierPatch[] m_splited = new BezierPatch[4];
 
     public void UpdatePreviewMesh()
     {
@@ -125,6 +126,24 @@ public class BezierPatchRaycaster : MonoBehaviour
         }
     }
 
+    void Split()
+    {
+        if (m_splited[0]==null)
+        {
+            for(int i=0; i<m_splited.Length; ++i)
+            {
+                m_splited[i] = new BezierPatch();
+            }
+        }
+        if(m_bpatch != null)
+        {
+            var uv = new Vector2(0.5f, 0.5f);
+            m_bpatch.bpatch.Split(
+                ref m_splited[0], ref m_splited[1], ref m_splited[2], ref m_splited[3], ref uv);
+        }
+    }
+
+
 
     void OnDisable()
     {
@@ -192,8 +211,23 @@ public class BezierPatchRaycaster : MonoBehaviour
             Gizmos.color = Color.blue;
             Gizmos.DrawWireSphere(m_data_raycast[0].hit_pos, 0.05f);
         }
+
+        if (m_splited[0] != null)
+        {
+            Color[] colors = new Color[]
+            {
+                new Color(1.0f, 0.0f, 0.0f),
+                new Color(0.0f, 1.0f, 0.0f),
+                new Color(0.0f, 0.0f, 0.0f),
+                new Color(0.6f, 0.6f, 0.0f),
+            };
+            for (int i = 0; i < m_splited.Length; ++i)
+            {
+                m_splited[i].OnDrawGizmo(colors[i]);
+            }
+        }
     }
-    
+
     // for debug
     /*
     void Raycast()
@@ -207,13 +241,13 @@ public class BezierPatchRaycaster : MonoBehaviour
             bool ret = m_bpatch.bpatch.Raycast(pos, dir, max_distance, ref hit);
         }
     }
-    
+        */
+
     void OnGUI()
     {
-        if (GUI.Button(new Rect(10, 10, 150, 30), "Raycast"))
+        if (GUI.Button(new Rect(10, 10, 150, 30), "Split"))
         {
-            Raycast();
+            Split();
         }
     }
-    */
 }

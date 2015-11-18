@@ -167,8 +167,7 @@ namespace Ist
                 UpdatePreviewMesh();
             }
         }
-    
-    
+
         void OnDrawGizmos()
         {
             Gizmos.color = Color.cyan;

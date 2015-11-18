@@ -146,6 +146,24 @@ namespace Ist
             GL.End();
         }
 
+        public void OnDrawGizmo(Color color)
+        {
+            Gizmos.color = color;
+            for (int y = 0; y < 4; ++y)
+            {
+                for (int x = 0; x < 3; ++x)
+                {
+                    Gizmos.DrawLine(cp[y * 4 + x], cp[y * 4 + x + 1]);
+                }
+            }
+            for (int y = 0; y < 3; ++y)
+            {
+                for (int x = 0; x < 4; ++x)
+                {
+                    Gizmos.DrawLine(cp[y * 4 + x], cp[(y + 1) * 4 + x]);
+                }
+            }
+        }
 
         #region impl
         static Vector3[] DefaultControlPoints()
@@ -169,17 +187,17 @@ namespace Ist
         static extern Vector3 uosBPEvaluateNormal(ref Vector3 bp, ref Vector2 uv);
 
         [DllImport("UnityOpenSubdiv")]
-        static extern Vector3 uosBPSplit(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, ref Vector3 dst2, ref Vector3 dst3, ref Vector2 uv);
+        static extern void uosBPSplit(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, ref Vector3 dst2, ref Vector3 dst3, ref Vector2 uv);
         [DllImport("UnityOpenSubdiv")]
-        static extern Vector3 uosBPSplitU(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, float u);
+        static extern void uosBPSplitU(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, float u);
         [DllImport("UnityOpenSubdiv")]
-        static extern Vector3 uosBPSplitV(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, float v);
+        static extern void uosBPSplitV(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, float v);
         [DllImport("UnityOpenSubdiv")]
-        static extern Vector3 uosBPCrop(ref Vector3 bp, ref Vector3 dst0, ref Vector2 uv0, ref Vector2 uv1);
+        static extern void uosBPCrop(ref Vector3 bp, ref Vector3 dst0, ref Vector2 uv0, ref Vector2 uv1);
         [DllImport("UnityOpenSubdiv")]
-        static extern Vector3 uosBPCropU(ref Vector3 bp, ref Vector3 dst0, float u0, float u1);
+        static extern void uosBPCropU(ref Vector3 bp, ref Vector3 dst0, float u0, float u1);
         [DllImport("UnityOpenSubdiv")]
-        static extern Vector3 uosBPCropV(ref Vector3 bp, ref Vector3 dst0, float v0, float v1);
+        static extern void uosBPCropV(ref Vector3 bp, ref Vector3 dst0, float v0, float v1);
 
         [DllImport("UnityOpenSubdiv")]
         static extern bool uosBPRaycast(ref Vector3 bp, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
