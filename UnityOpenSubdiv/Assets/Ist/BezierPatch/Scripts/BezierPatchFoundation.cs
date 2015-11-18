@@ -123,6 +123,29 @@ namespace Ist
             dst.extents = (max - min) * 0.5f;
         }
 
+        public void DrawWireframe(Color color)
+        {
+            GL.Begin(GL.LINES);
+            GL.Color(color);
+            for (int y = 0; y < 4; ++y)
+            {
+                for (int x = 0; x < 3; ++x)
+                {
+                    GL.Vertex(cp[y * 4 + (x + 0)]);
+                    GL.Vertex(cp[y * 4 + (x + 1)]);
+                }
+            }
+            for (int y = 0; y < 3; ++y)
+            {
+                for (int x = 0; x < 4; ++x)
+                {
+                    GL.Vertex(cp[(y + 0) * 4 + x]);
+                    GL.Vertex(cp[(y + 1) * 4 + x]);
+                }
+            }
+            GL.End();
+        }
+
 
         #region impl
         static Vector3[] DefaultControlPoints()
