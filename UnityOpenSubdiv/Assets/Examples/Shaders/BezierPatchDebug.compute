@@ -36,14 +36,16 @@ struct TestCropData
 
 struct TestRaycastData
 {
-    Ray ray;
     BezierPatch bp;
     float4x4 trans;
+    Ray ray;
     float zmin;
     float zmax;
     BezierPatchHit hit;
     float3 hit_pos;
     float3 hit_normal;
+    BezierPatch dst;
+    float4x4 zalign;
 };
 
 RWStructuredBuffer<Vertex>              _Vertices;
@@ -90,9 +92,9 @@ void TestCrop(uint3 dtid : SV_DispatchThreadID)
 [numthreads(1,1,1)]
 void TestRaycast(uint3 dtid : SV_DispatchThreadID)
 {
-    Ray ray = _TestRaycastData[0].ray;
     BezierPatch bp = _TestRaycastData[0].bp;
     BPTransform(bp, _TestRaycastData[0].trans);
+    Ray ray = _TestRaycastData[0].ray;
     float zmin = _TestRaycastData[0].zmin;
     float zmax = _TestRaycastData[0].zmax;
     BezierPatchHit hit;
@@ -101,4 +103,8 @@ void TestRaycast(uint3 dtid : SV_DispatchThreadID)
     _TestRaycastData[0].hit = hit;
     _TestRaycastData[0].hit_pos = BPEvaluate(bp, float2(hit.u, hit.v));
     _TestRaycastData[0].hit_normal = BPEvaluateNormal(bp, float2(hit.u, hit.v));
+
+    _TestRaycastData[0].dst = bp;
+    _TestRaycastData[0].zalign = ZAlign(ray.origin, ray.direction);
+    BPTransform(_TestRaycastData[0].dst, _TestRaycastData[0].zalign);
 }

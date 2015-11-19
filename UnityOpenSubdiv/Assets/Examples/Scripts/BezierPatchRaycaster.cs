@@ -40,15 +40,17 @@ public class BezierPatchRaycaster : MonoBehaviour
 
     public struct TestRaycastData
     {
-        public Vector3 ray_pos;
-        public Vector3 ray_dir;
         public BezierPatchRaw bp;
         public Matrix4x4 bptrans;
+        public Vector3 ray_pos;
+        public Vector3 ray_dir;
         public float zmin;
         public float zmax;
         public BezierPatchHit hit;
         public Vector3 hit_pos;
         public Vector3 hit_normal;
+        public BezierPatchRaw dst;
+        public Matrix4x4 zalign;
     };
 
     public static int SizeOf<T>()
