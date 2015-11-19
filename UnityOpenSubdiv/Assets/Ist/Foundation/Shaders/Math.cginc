@@ -232,7 +232,7 @@ float4x4 ZAlign(float3 pos, float3 dir, float3 up)
         0.0, 0.0, 1.0, -pos.z,
         0.0, 0.0, 0.0, 1.0
         );
-    return rot * trs;
+    return mul(rot, trs);
 }
 float4x4 ZAlign(float3 pos, float3 dir)
 {
