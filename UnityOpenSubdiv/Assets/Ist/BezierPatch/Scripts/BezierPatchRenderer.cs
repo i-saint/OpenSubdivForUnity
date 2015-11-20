@@ -15,6 +15,7 @@ namespace Ist
     [RequireComponent(typeof(MeshFilter))]
     [RequireComponent(typeof(MeshRenderer))]
     [RequireComponent(typeof(IBezierPatchContainer))]
+    [ExecuteInEditMode]
     public class BezierPatchRenderer : ICommandBufferExecuter<BezierPatchRenderer>
     {
         [SerializeField] Mesh m_bound_mesh;
@@ -36,8 +37,9 @@ namespace Ist
         }
 #endif
 
-        void OnDestroy()
+        public override void OnDisable()
         {
+            base.OnDisable();
             if (m_buf_vertices != null)
             {
                 m_buf_vertices.Release();

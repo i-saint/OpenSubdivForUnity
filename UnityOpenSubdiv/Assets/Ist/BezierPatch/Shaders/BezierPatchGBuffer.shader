@@ -6,6 +6,7 @@ Properties {
     _MainTex ("Albedo (RGB)", 2D) = "white" {}
     _Glossiness("Smoothness", Range(0,1)) = 0.5
     _Metallic("Metallic", Range(0, 1)) = 0.0
+    _Epsilon("Epsilon", Float) = 0.01
 }
 
 CGINCLUDE
@@ -27,6 +28,7 @@ StructuredBuffer<BezierPatch>   _BezierPatches;
 StructuredBuffer<AABB>          _AABBs;
 sampler2D   _AdaptiveBuffer;
 float4      _SpecularColor;
+float       _Epsilon;
 
 
 
@@ -70,7 +72,7 @@ struct gbuffer_out
     half4 spec_smoothness   : SV_Target1; // RT1: spec color (rgb), smoothness (a)
     half4 normal            : SV_Target2; // RT2: normal (rgb), --unused, very low precision-- (a) 
     half4 emission          : SV_Target3; // RT3: emission (rgb), --unused-- (a)
-    float depth             : SV_Depth;
+    float depth             : SV_DepthGreaterEqual;
 };
 
 gbuffer_out frag_gbuffer(vs_out I)
@@ -85,25 +87,6 @@ gbuffer_out frag_gbuffer(vs_out I)
 
     uint iid = I.instance_id;
     BezierPatch bpatch = _BezierPatches[iid];
-/*
-    // just fot test
-    bpatch.cp[ 0] = float3(-1.0 , 0.0, -1.0 );
-    bpatch.cp[ 1] = float3(-0.33, 0.0, -1.0 );
-    bpatch.cp[ 2] = float3( 0.33, 0.0, -1.0 );
-    bpatch.cp[ 3] = float3( 1.0 , 0.0, -1.0 );
-    bpatch.cp[ 4] = float3(-1.0 , 0.0, -0.33);
-    bpatch.cp[ 5] = float3(-0.33, 1.0, -0.33);
-    bpatch.cp[ 6] = float3( 0.33, 0.0, -0.33);
-    bpatch.cp[ 7] = float3( 1.0 , 0.0, -0.33);
-    bpatch.cp[ 8] = float3(-1.0 , 0.0,  0.33);
-    bpatch.cp[ 9] = float3(-0.33, 0.0,  0.33);
-    bpatch.cp[10] = float3( 0.33, 0.0,  0.33);
-    bpatch.cp[11] = float3( 1.0 , 0.0,  0.33);
-    bpatch.cp[12] = float3(-1.0 , 0.0,  1.0 );
-    bpatch.cp[13] = float3(-0.33, 0.0,  1.0 );
-    bpatch.cp[14] = float3( 0.33, 0.0,  1.0 );
-    bpatch.cp[15] = float3( 1.0 , 0.0,  1.0 );
-*/
 
     AABB aabb = _AABBs[iid];
     float zmin = 0.0;
@@ -117,7 +100,7 @@ gbuffer_out frag_gbuffer(vs_out I)
 #endif
 
     BezierPatchHit hit;
-    if (!BPIRaycast(bpatch, ray, zmin, zmax, hit)) {
+    if (!BPIRaycast(bpatch, ray, zmin, zmax, _Epsilon, hit)) {
         discard;
     }
 
@@ -139,12 +122,11 @@ gbuffer_out frag_gbuffer(vs_out I)
 
 
 
-
 struct distance_out
 {
     float4 distance : SV_Target0;
 #if ENABLE_DEPTH_OUTPUT
-    float depth : SV_Depth;
+    float depth : SV_DepthGreaterEqual;
 #endif
 };
 
@@ -169,7 +151,7 @@ distance_out frag_distance(vs_out I)
     ray.origin = world_pos;
 
     BezierPatchHit hit;
-    if (!BPIRaycast(bpatch, ray, zmin, zmax, hit)) {
+    if (!BPIRaycast(bpatch, ray, zmin, zmax, _Epsilon, hit)) {
         discard;
     }
 

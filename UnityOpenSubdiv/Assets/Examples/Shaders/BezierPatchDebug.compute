@@ -99,12 +99,9 @@ void TestRaycast(uint3 dtid : SV_DispatchThreadID)
     float zmax = _TestRaycastData[0].zmax;
     BezierPatchHit hit;
 
-    BPIRaycast(bp, ray, zmin, zmax, hit);
+    BPIRaycast(bp, ray, zmin, zmax, 0.01, hit);
     _TestRaycastData[0].hit = hit;
     _TestRaycastData[0].hit_pos = BPEvaluate(bp, float2(hit.u, hit.v));
     _TestRaycastData[0].hit_normal = BPEvaluateNormal(bp, float2(hit.u, hit.v));
-
-    _TestRaycastData[0].dst = bp;
-    _TestRaycastData[0].zalign = ZAlign(ray.origin, ray.direction);
-    BPTransform(_TestRaycastData[0].dst, _TestRaycastData[0].zalign);
 }
+

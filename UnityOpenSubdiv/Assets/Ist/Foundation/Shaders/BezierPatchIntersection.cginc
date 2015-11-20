@@ -13,7 +13,7 @@ struct BezierPatchHit
     int clip_level;
 };
 
-bool BPIRaycast(BezierPatch bp, Ray ray, float zmin, float zmax, out BezierPatchHit hit);
+bool BPIRaycast(BezierPatch bp, Ray ray, float zmin, float zmax, float eps, out BezierPatchHit hit);
 
 
 
@@ -199,7 +199,7 @@ bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info,
 }
 
 
-bool BPIRaycast(BezierPatch bp, Ray ray, float zmin, float zmax, out BezierPatchHit hit)
+bool BPIRaycast(BezierPatch bp, Ray ray, float zmin, float zmax, float eps, out BezierPatchHit hit)
 {
     BPIWorkingBuffer work = (BPIWorkingBuffer)0;
 
@@ -214,7 +214,7 @@ bool BPIRaycast(BezierPatch bp, Ray ray, float zmin, float zmax, out BezierPatch
     //}
 
     hit.t = zmax;
-    if (BPITestBezierPatch_(work, hit, zmin, zmax, BPI_EPS)) {
+    if (BPITestBezierPatch_(work, hit, zmin, zmax, eps)) {
         return true;
     }
     return false;
