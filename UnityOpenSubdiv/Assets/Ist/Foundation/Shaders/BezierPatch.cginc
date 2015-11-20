@@ -28,6 +28,7 @@ void   BPCropU(BezierPatch bp, out BezierPatch dst, float u0, float u1);
 void   BPCropV(BezierPatch bp, out BezierPatch dst, float v0, float v1);
 float3 BPGetLv(BezierPatch bp);
 float3 BPGetLu(BezierPatch bp);
+float3 BPGetRoughNormal(BezierPatch bp);
 
 void   BPTranspose(inout BezierPatch bp);
 void   BPTransform(inout BezierPatch bp, float3x3 m);
@@ -244,6 +245,12 @@ float3 BPGetLu(BezierPatch bp)
     return BPGet(bp, 4 - 1, 0) - BPGet(bp, 0, 0) + BPGet(bp, 4 - 1, 4 - 1) - BPGet(bp, 0, 4 - 1);
 }
 
+float3 BPGetRoughNormal(BezierPatch bp)
+{
+    float3 LU = bp.cp[3] - bp.cp[0];
+    float3 LV = bp.cp[12] - bp.cp[0];
+    return normalize(cross(LV, LU));
+}
 
 void BPSwap_(inout BezierPatch bp, int a, int b)
 {

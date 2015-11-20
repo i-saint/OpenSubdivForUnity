@@ -304,7 +304,7 @@ public class BezierPatchRaycaster : MonoBehaviour
             m_buf_raycast.GetData(m_data_raycast);
 
             Gizmos.color = Color.blue;
-            Gizmos.DrawWireSphere(m_data_raycast[0].hit_pos, 0.05f);
+            Gizmos.DrawWireSphere(m_data_raycast[0].hit_pos, 0.075f);
         }
 
         if (m_show_splitted && m_splited[0] != null)

@@ -26,9 +26,6 @@ bool BPIRaycast(BezierPatch bp, Ray ray, float zmin, float zmax, float eps, out 
 #ifndef BPI_MAX_LOOP
     #define BPI_MAX_LOOP 1000
 #endif
-#ifndef BPI_EPS
-    #define BPI_EPS 0.01
-#endif
 
 struct BPIWorkingBuffer
 {
@@ -83,17 +80,17 @@ bool BPITriangleIntersect_(
 }
 
 bool BPITestBezierClipL_(
-    BezierPatch patch, out float3 uvt, float2 uv0, float2 uv1, float zmin, float zmax)
+    BezierPatch bp, out float3 uvt, float2 uv0, float2 uv1, float zmin, float zmax)
 {
     // TODO (NO_DIRECT)
     // DIRECT_BILINEAR
     float3 p0, p1, p2, p3;
     float3 ray_org = float3(0.0, 0.0, 0.0);
     float3 ray_dir = float3(0.0, 0.0, 1.0);
-    p0 = patch.cp[0];
-    p1 = patch.cp[3];
-    p2 = patch.cp[12];
-    p3 = patch.cp[15];
+    p0 = bp.cp[0];
+    p1 = bp.cp[3];
+    p2 = bp.cp[12];
+    p3 = bp.cp[15];
     bool ret = false;
     float t = zmax, uu = 0.0, vv = 0.0;
     if (BPITriangleIntersect_(t, uu, vv, p0, p2, p1, ray_org, ray_dir)) {
