@@ -82,15 +82,19 @@ namespace Ist
             uosBPCropV(ref cp[0], ref dst0.cp[0], v0, v1);
         }
 
-
-        public bool Raycast(Vector3 orig, Vector3 dir, float max_distance, ref BezierPatchHit hit)
+        public void Transform(ref Matrix4x4 mat)
         {
-            return uosBPRaycast(ref cp[0], ref orig, ref dir, max_distance, ref hit);
+            uosBPTransform(ref cp[0], ref mat);
         }
 
-        public bool Raycast(ref Matrix4x4 trans, Vector3 orig, Vector3 dir, float max_distance, ref BezierPatchHit hit)
+        public bool Raycast(Vector3 orig, Vector3 dir, float zmin, float zmax, float epsilon, ref BezierPatchHit hit)
         {
-            return uosBPRaycastWithTransform(ref cp[0], ref trans, ref orig, ref dir, max_distance, ref hit);
+            return uosBPRaycast(ref cp[0], ref orig, ref dir, zmin, zmax, epsilon, ref hit);
+        }
+
+        public bool Raycast(ref Matrix4x4 trans, Vector3 orig, Vector3 dir, float zmin, float zmax, float epsilon, ref BezierPatchHit hit)
+        {
+            return uosBPRaycastWithTransform(ref cp[0], ref trans, ref orig, ref dir, zmin, zmax, epsilon, ref hit);
         }
 
 
@@ -200,9 +204,12 @@ namespace Ist
         static extern void uosBPCropV(ref Vector3 bp, ref Vector3 dst0, float v0, float v1);
 
         [DllImport("UnityOpenSubdiv")]
-        static extern bool uosBPRaycast(ref Vector3 bp, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
+        static extern void uosBPTransform(ref Vector3 bp, ref Matrix4x4 mat);
+
         [DllImport("UnityOpenSubdiv")]
-        static extern bool uosBPRaycastWithTransform(ref Vector3 bp, ref Matrix4x4 bptrans, ref Vector3 orig, ref Vector3 dir, float max_distance, ref BezierPatchHit hit);
+        static extern bool uosBPRaycast(ref Vector3 bp, ref Vector3 orig, ref Vector3 dir, float zmin, float zmax, float epsilon, ref BezierPatchHit hit);
+        [DllImport("UnityOpenSubdiv")]
+        static extern bool uosBPRaycastWithTransform(ref Vector3 bp, ref Matrix4x4 mat, ref Vector3 orig, ref Vector3 dir, float zmin, float zmax, float epsilon, ref BezierPatchHit hit);
         #endregion
     }
 }

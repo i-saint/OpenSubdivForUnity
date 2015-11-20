@@ -37,8 +37,9 @@ uosCLinkage uosExport void uosBPSplitV(const BezierPatch *bp, BezierPatch *dst0,
 uosCLinkage uosExport void uosBPCrop(const BezierPatch *bp, BezierPatch *dst, const float2 *uv0, const float2 *uv1);
 uosCLinkage uosExport void uosBPCropU(const BezierPatch *bp, BezierPatch *dst, float u0, float u1);
 uosCLinkage uosExport void uosBPCropV(const BezierPatch *bp, BezierPatch *dst, float v0, float v1);
+uosCLinkage uosExport void uosBPTransform(BezierPatch *bp, float4x4 *mat);
 
-uosCLinkage uosExport bool uosBPRaycast(const BezierPatch *bp, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit);
-uosCLinkage uosExport bool uosBPRaycastWithTransform(const BezierPatch *bp, const float4x4 *bptrans, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit);
+uosCLinkage uosExport bool uosBPRaycast(const BezierPatch *bp, const float3 *orig, const float3 *dir, float zmin, float zmax, float epsilon, BezierPatchHit *hit);
+uosCLinkage uosExport bool uosBPRaycastWithTransform(const BezierPatch *bp, const float4x4 *trans, const float3 *orig, const float3 *dir, float zmin, float zmax, float epsilon, BezierPatchHit *hit);
 
 #endif // UnityOpenSubdiv_h

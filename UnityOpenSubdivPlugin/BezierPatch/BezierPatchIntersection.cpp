@@ -1107,16 +1107,18 @@ bool BezierPatchIntersectionImpl::testBezierClipRangeV(UVT& info, const BezierPa
 
 
 
-bool BezierPatchRaycast(const BezierPatch &bp, const Ray &ray, float zmax, BezierPatchHit &hit)
+bool BezierPatchRaycast(const BezierPatch &bp, const Ray &ray, float zmin, float zmax, float epsilon, BezierPatchHit &hit)
 {
     BezierPatchIntersectionImpl impl(bp);
-    return impl.Test(hit, ray, 0.0f, zmax);
+    impl.SetEpsilon(epsilon);
+    return impl.Test(hit, ray, zmin, zmax);
 }
 
-bool BezierPatchRaycast(const BezierPatch &bp, const float4x4 &bptrans, const Ray &ray, float zmax, BezierPatchHit &hit)
+bool BezierPatchRaycast(const BezierPatch &bp, const float4x4 &trans, const Ray &ray, float zmin, float zmax, float epsilon, BezierPatchHit &hit)
 {
-    BezierPatchIntersectionImpl impl(BezierPatch(bp, bptrans));
-    return impl.Test(hit, ray, 0.0f, zmax);
+    BezierPatchIntersectionImpl impl(BezierPatch(bp, trans));
+    impl.SetEpsilon(epsilon);
+    return impl.Test(hit, ray, zmin, zmax);
 }
 
 

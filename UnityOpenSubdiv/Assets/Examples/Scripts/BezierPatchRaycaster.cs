@@ -264,17 +264,19 @@ public class BezierPatchRaycaster : MonoBehaviour
     {
         if (m_bpatch == null) { return; }
 
-        float max_distance = 5.0f;
+        float zmin = 0.0f;
+        float zmax = 5.0f;
+        float epsilon = 0.01f;
     
         Gizmos.color = Color.red;
         var ray_pos = transform.position;
         var ray_dir = transform.forward;
         var trans = m_bpatch.transform.localToWorldMatrix;
-        Gizmos.DrawLine(ray_pos, ray_pos + ray_dir * max_distance);
+        Gizmos.DrawLine(ray_pos, ray_pos + ray_dir * zmax);
 
         {
             BezierPatchHit hit = default(BezierPatchHit);
-            if (m_bpatch.bpatch.Raycast(ref trans, ray_pos, ray_dir, max_distance, ref hit))
+            if (m_bpatch.bpatch.Raycast(ref trans, ray_pos, ray_dir, zmin, zmax, epsilon, ref hit))
             {
                 var hit_pos = ray_pos + ray_dir * hit.t;
                 //var hit_pos = m_bpatch.bpatch.Evaluate(hit.uv); // same as above
@@ -293,7 +295,7 @@ public class BezierPatchRaycaster : MonoBehaviour
             m_bpatch.bpatch.GetRawData(ref m_data_raycast[0].bp);
             m_data_raycast[0].bptrans = trans;
             m_data_raycast[0].zmin = 0.0f;
-            m_data_raycast[0].zmax = max_distance;
+            m_data_raycast[0].zmax = zmax;
 
             int k = m_debug_cs.FindKernel("TestRaycast");
             m_buf_raycast.SetData(m_data_raycast);

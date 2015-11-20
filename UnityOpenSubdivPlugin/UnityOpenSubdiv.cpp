@@ -82,15 +82,19 @@ uosCLinkage uosExport void uosBPCropV(const BezierPatch *bp, BezierPatch *dst, f
     bp->CropV(*dst, v0, v1);
 }
 
-
-uosCLinkage uosExport bool uosBPRaycast(const BezierPatch *bp, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit)
+uosCLinkage uosExport void uosBPTransform(BezierPatch *bp, float4x4 *mat)
 {
-    Ray ray = { *orig, *dir };
-    return BezierPatchRaycast(*bp, ray, max_distance, *hit);
+    bp->Transform(*mat);
 }
 
-uosCLinkage uosExport bool uosBPRaycastWithTransform(const BezierPatch *bp, const float4x4 *bptrans, const float3 *orig, const float3 *dir, float max_distance, BezierPatchHit *hit)
+uosCLinkage uosExport bool uosBPRaycast(const BezierPatch *bp, const float3 *orig, const float3 *dir, float zmin, float zmax, float epsilon, BezierPatchHit *hit)
 {
-    Ray ray = {*orig, *dir};
-    return BezierPatchRaycast(*bp, *bptrans, ray, max_distance, *hit);
+    Ray ray = { *orig, *dir };
+    return BezierPatchRaycast(*bp, ray, zmin, zmax, epsilon, *hit);
+}
+
+uosCLinkage uosExport bool uosBPRaycastWithTransform(const BezierPatch *bp, const float4x4 *trans, const float3 *orig, const float3 *dir, float zmin, float zmax, float epsilon, BezierPatchHit *hit)
+{
+    Ray ray = { *orig, *dir };
+    return BezierPatchRaycast(*bp, *trans, ray, zmin, zmax, epsilon, *hit);
 }
