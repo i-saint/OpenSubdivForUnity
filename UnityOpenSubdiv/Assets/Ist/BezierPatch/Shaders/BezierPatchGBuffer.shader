@@ -118,7 +118,7 @@ gbuffer_out frag_gbuffer(vs_out I)
 
     BezierPatchHit hit;
     if (!BPIRaycast(bpatch, ray, zmin, zmax, hit)) {
-        //discard;
+        discard;
     }
 
     float3 bp_pos = ray.origin + ray.direction * hit.t;
@@ -136,6 +136,7 @@ gbuffer_out frag_gbuffer(vs_out I)
     O.depth = ComputeDepth(mul(UNITY_MATRIX_VP, float4(bp_pos, 1.0)));
     return O;
 }
+
 
 
 
