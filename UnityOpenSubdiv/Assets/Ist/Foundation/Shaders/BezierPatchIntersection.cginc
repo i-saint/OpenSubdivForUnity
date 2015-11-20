@@ -137,8 +137,8 @@ bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info,
     int stack_index = 0;
     range_stack[0] = work.uv_range;
 
-    int i;
-    for (i = 0; i < BPI_MAX_LOOP && stack_index >= 0; ++i) {
+    bool ret = false;
+    for (int i = 0; i < BPI_MAX_LOOP && stack_index >= 0; ++i) {
 
         // pop a patch range and crop
         float u0 = range_stack[stack_index].x;
@@ -174,7 +174,7 @@ bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info,
                 info.v = uvt.y;
                 info.t = uvt.z;
                 zmax = info.t;
-                return true;
+                ret = true;
             }
             // find another intersection
             continue;
@@ -195,7 +195,7 @@ bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info,
 
         if (stack_index >= BPI_MAX_STACK_DEPTH - 1) break;
     }
-    return false;
+    return ret;
 }
 
 
