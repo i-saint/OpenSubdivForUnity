@@ -186,10 +186,13 @@ namespace Ist
 
 
         [DllImport("UnityOpenSubdiv")]
+        static extern void uosBPGetMinMax(ref Vector3 bp, ref Vector3 omin, ref Vector3 omax, float eps);
+        [DllImport("UnityOpenSubdiv")]
+        static extern Vector3 uosBPGetRoughNormal(ref Vector3 bp);
+        [DllImport("UnityOpenSubdiv")]
         static extern Vector3 uosBPEvaluate(ref Vector3 bp, ref Vector2 uv);
         [DllImport("UnityOpenSubdiv")]
         static extern Vector3 uosBPEvaluateNormal(ref Vector3 bp, ref Vector2 uv);
-
         [DllImport("UnityOpenSubdiv")]
         static extern void uosBPSplit(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, ref Vector3 dst2, ref Vector3 dst3, ref Vector2 uv);
         [DllImport("UnityOpenSubdiv")]

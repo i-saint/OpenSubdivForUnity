@@ -110,6 +110,13 @@ void BezierPatch::GetMinMax(float3 &o_min, float3 &o_max, float epsilon) const
 }
 
 
+float3 BezierPatch::GetRoughNormal() const
+{
+    float3 LU = m_cp[ 3] - m_cp[0];
+    float3 LV = m_cp[12] - m_cp[0];
+    return normalize(cross(LV, LU));
+}
+
 float3 BezierPatch::Evaluate(const float2& uv) const
 {
     float3 b[4];

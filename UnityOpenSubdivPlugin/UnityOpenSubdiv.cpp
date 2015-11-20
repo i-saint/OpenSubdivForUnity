@@ -47,6 +47,15 @@ uosCLinkage uosExport void uosDestroyContext(uosContext* ctx)
 }
 
 
+uosCLinkage uosExport void uosBPGetMinMax(const BezierPatch *bp, float3 *omin, float3 *omax, float eps)
+{
+    bp->GetMinMax(*omin, *omax, eps);
+}
+
+uosCLinkage uosExport cfloat3 uosBPGetRoughNormal(const BezierPatch *bp)
+{
+    return (cfloat3&)bp->GetRoughNormal();
+}
 
 uosCLinkage uosExport cfloat3 uosBPEvaluate(const BezierPatch *bp, const float2 *uv)
 {

@@ -19,6 +19,7 @@ public:
     float3 GetMin() const;
     float3 GetMax() const;
     void GetMinMax(float3 &o_min, float3 &o_max, float epsilon=0.0f) const;
+    float3 GetRoughNormal() const;
 
     float3 Evaluate(const float2& uv) const;
     float3 EvaluateDu(const float2& uv) const;

@@ -28,9 +28,10 @@ uosCLinkage uosExport void          uosDestroyContext(uosContext* ctx);
 
 
 
+uosCLinkage uosExport void uosBPGetMinMax(const BezierPatch *bp, float3 *omin, float3 *omax, float eps);
+uosCLinkage uosExport cfloat3 uosBPGetRoughNormal(const BezierPatch *bp);
 uosCLinkage uosExport cfloat3 uosBPEvaluate(const BezierPatch *bp, const float2 *uv);
 uosCLinkage uosExport cfloat3 uosBPEvaluateNormal(const BezierPatch *bp, const float2 *uv);
-
 uosCLinkage uosExport void uosBPSplit(const BezierPatch *bp, BezierPatch *dst0, BezierPatch *dst1, BezierPatch *dst2, BezierPatch *dst3, const float2 *uv);
 uosCLinkage uosExport void uosBPSplitU(const BezierPatch *bp, BezierPatch *dst0, BezierPatch *dst1, float u);
 uosCLinkage uosExport void uosBPSplitV(const BezierPatch *bp, BezierPatch *dst0, BezierPatch *dst1, float v);
