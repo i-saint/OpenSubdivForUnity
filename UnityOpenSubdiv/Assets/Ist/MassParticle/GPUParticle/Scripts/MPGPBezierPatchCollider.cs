@@ -27,16 +27,5 @@ namespace Ist
                 EachTargets((t) => { t.AddBezierPatchCollider(ref collider); });
             }
         }
-    
-        void OnDrawGizmos()
-        {
-            if (!enabled) return;
-            Transform t = GetComponent<Transform>();
-            Gizmos.color = MPGPImpl.ColliderGizmoColor;
-            Gizmos.matrix = t.localToWorldMatrix;
-            Gizmos.DrawWireCube(m_center, m_size);
-            Gizmos.matrix = Matrix4x4.identity;
-        }
-    
     }
 }

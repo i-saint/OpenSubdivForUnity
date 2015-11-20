@@ -108,6 +108,7 @@ namespace Ist
         int m_max_sphere_colliders = 256;
         int m_max_capsule_colliders = 256;
         int m_max_box_colliders = 256;
+        int m_max_bp_colliders = 256;
         int m_max_forces = 128;
         ComputeBuffer m_buf_sphere_colliders;
         ComputeBuffer m_buf_capsule_colliders;
@@ -233,7 +234,7 @@ namespace Ist
             m_buf_sphere_colliders = new ComputeBuffer(m_max_sphere_colliders, MPGPSphereColliderData.size);
             m_buf_capsule_colliders = new ComputeBuffer(m_max_capsule_colliders, MPGPCapsuleColliderData.size);
             m_buf_box_colliders = new ComputeBuffer(m_max_box_colliders, MPGPBoxColliderData.size);
-            m_buf_bp_colliders = new ComputeBuffer(m_max_box_colliders, MPGPBezierPatchColliderData.size);
+            m_buf_bp_colliders = new ComputeBuffer(m_max_bp_colliders, MPGPBezierPatchColliderData.size);
             m_buf_forces = new ComputeBuffer(m_max_forces, CSForce.size);
         }
     

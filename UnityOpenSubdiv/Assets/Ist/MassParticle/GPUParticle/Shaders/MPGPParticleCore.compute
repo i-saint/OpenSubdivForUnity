@@ -471,13 +471,17 @@ void ProcessColliders(uint3 dtid : SV_DispatchThreadID)
         BezierPatchCollider col = bp_colliders[ci];
         if(!IsOverlaped(ppos, col.info.aabb, psize)) { continue; }
 
-        // todo
-        //DistanceData dd = DistancePointBox(ppos, col.shape);
-        //float penetration = dd.distance - wd.particle_size;
-        //if(penetration<0.0) {
-        //    pimd[pi].accel += dd.direction * -penetration * wd.wall_stiffness;
-        //    particles[pi].hit_objid = col.info.owner_objid;
-        //}
+        Ray ray;
+        ray.origin = ppos;
+        ray.direction = BPGetRoughNormal(col.shape);
+
+        float zmax = psize*5.0;
+        BezierPatchHit hit;
+        if (BPIRaycast(col.shape, ray, 0.0, zmax, 0.01, hit)) {
+            float3 n = BPEvaluateNormal(col.shape, float2(hit.u, hit.v));
+            pimd[pi].accel += n * (zmax-hit.t) * wd.wall_stiffness;
+            particles[pi].hit_objid = col.info.owner_objid;
+        }
     }
 }
 
