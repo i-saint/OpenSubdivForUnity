@@ -3,7 +3,6 @@
 #include "BezierPatchIntersection.h"
 
 #define trace(...)
-#define N 4
 #define EPSILON 1e-4f
 #define UVEPSILON (1.0f / 32.0f)
 #define DEFAULT_MAX_LEVEL 10
@@ -78,7 +77,7 @@ private:
 };
 
 
-static inline float3x3 BPRotate2D(const float3 &dx)
+static inline float3x3 BPIRotate2D_(const float3 &dx)
 {
     float2 x = normalize(float2(dx.x, dx.y));
     float2 y = float2(-x[1], x[0]);
@@ -90,7 +89,7 @@ static inline float3x3 BPRotate2D(const float3 &dx)
 }
 
 
-static inline float4x4 BPRayTransform(const float3& p, const float3& dir)
+static inline float4x4 BPIZAlign_(const float3& p, const float3& dir)
 {
     float3 z = dir;
     int plane = 0;
@@ -118,19 +117,19 @@ static inline float4x4 BPRayTransform(const float3& p, const float3& dir)
 
 
 
-static inline void BPRotateU(BezierPatch& patch)
+static inline void BPIRotateU_(BezierPatch& patch)
 {
     float3 dx = patch.GetLv();
-    patch.Transform(BPRotate2D(dx));
+    patch.Transform(BPIRotate2D_(dx));
 }
 
-static inline void BPRotateV(BezierPatch& patch)
+static inline void BPIRotateV_(BezierPatch& patch)
 {
     float3 dx = patch.GetLu();
-    patch.Transform(BPRotate2D(dx));
+    patch.Transform(BPIRotate2D_(dx));
 }
 
-static inline bool BPIsEps(const float3& min, const float3& max, float eps)
+static inline bool BPIIsEps_(const float3& min, const float3& max, float eps)
 {
     //return ((max[1]-min[1])<=eps);
     float xw = max[0] - min[0];
@@ -138,12 +137,12 @@ static inline bool BPIsEps(const float3& min, const float3& max, float eps)
     return (xw <= eps && yw <= eps);
 }
 
-static inline bool BPIsLevel(int level, int max_level)
+static inline bool BPIIsLevel_(int level, int max_level)
 {
     return (level >= max_level);
 }
 
-static inline bool BPIsClip(int level)
+static inline bool BPIIsClip_(int level)
 {
     static const int div_level[] =
     {
@@ -153,46 +152,24 @@ static inline bool BPIsClip(int level)
         3,3,3,3,//8
         4,4,4,4,4,4,4,4,//16
     };
-    int nlevel = div_level[N];
+    int nlevel = div_level[4];
     return nlevel * 2 <= level;
-}
-
-static inline void BPCoarseSort(int order[2], BezierPatch tmp[2])
-{
-#if USE_COARSESORT
-    float zs[2];
-    for (int i = 0; i < 2; ++i) {
-        int u = BezierPatch::Order >> 1;
-        int v = BezierPatch::Order >> 1;
-
-        zs[i] = tmp[i].Get(u, v)[2];
-    }
-    if (zs[0] <= zs[1]) {
-        order[0] = 0;
-        order[1] = 1;
-    }
-    else {
-        order[0] = 1;
-        order[1] = 0;
-    }
-#endif
 }
 
 // --------------------------------------------------------------------
 
 struct BPCurve
 {
-    static const int LENGTH = 4;
-    float2 operator[](int i) const { return v[i]; }
-    float2 &operator[](int i) { return v[i]; }
+    const float2& operator[](int i) const { return v[i]; }
+    float2& operator[](int i) { return v[i]; }
 
-    float2 v[LENGTH];
+    float2 v[4];
 };
 
-static inline bool BPScanMinMax(const BPCurve& p)
+static inline bool BPIScanMinMax_(const BPCurve& p)
 {
     int nUpper = 0, nLower = 0;
-    for (int i = 0; i < BPCurve::LENGTH; ++i) {
+    for (int i = 0; i < 4; ++i) {
         if (p[i][1] > 0) nUpper++;
         else nLower++;
         if (nUpper && nLower) return true;
@@ -200,14 +177,14 @@ static inline bool BPScanMinMax(const BPCurve& p)
     return false;
 }
 
-static inline float BPSlope(const float2& a, const float2& b)
+static inline float BPISlope_(const float2& a, const float2& b)
 {
     float d0 = b.x - a.x;
     float d1 = b.y - a.y;
     return fabs(d0 / d1);
 }
 
-static inline float BPDist(const float2 &p0, const float2& p1)
+static inline float BPIDist_(const float2 &p0, const float2& p1)
 {
     float a = fabs(p0.y);
     float b = fabs(p1.y);
@@ -216,9 +193,9 @@ static inline float BPDist(const float2 &p0, const float2& p1)
     return t;
 }
 
-static inline int BPScanConvex(float ts[], const BPCurve & p)
+static inline int BPIScanConvex_(float ts[], const BPCurve & p)
 {
-    if (!BPScanMinMax(p)) {
+    if (!BPIScanMinMax_(p)) {
         return 0;
     }
     int n = 0;
@@ -226,9 +203,9 @@ static inline int BPScanConvex(float ts[], const BPCurve & p)
         int k = -1;
         int l = -1;
         float current = std::numeric_limits<float>::max();
-        for (int i = 1; i < BPCurve::LENGTH; ++i) {
+        for (int i = 1; i < 4; ++i) {
             if (p[i][1] * p[0][1] < 0) {
-                float s = BPSlope(p[i], p[0]);
+                float s = BPISlope_(p[i], p[0]);
                 if (s < current) {
                     current = s;
                     k = i;
@@ -239,7 +216,7 @@ static inline int BPScanConvex(float ts[], const BPCurve & p)
             current = 0;
             for (int i = 0; i < k; ++i) {
                 if (p[i][1] * p[k][1] < 0) {
-                    float s = BPSlope(p[i], p[k]);
+                    float s = BPISlope_(p[i], p[k]);
                     if (current < s) {
                         current = s;
                         l = i;
@@ -247,7 +224,7 @@ static inline int BPScanConvex(float ts[], const BPCurve & p)
                 }
             }
             if (l >= 0) {
-                ts[n++] = BPDist(p[l], p[k]);
+                ts[n++] = BPIDist_(p[l], p[k]);
             }
         }
     }
@@ -255,9 +232,9 @@ static inline int BPScanConvex(float ts[], const BPCurve & p)
         int k = -1;
         int l = -1;
         float current = std::numeric_limits<float>::max();
-        for (int i = 0; i < BPCurve::LENGTH - 1; ++i) {
-            if (p[i][1] * p[BPCurve::LENGTH - 1][1] < 0) {
-                float s = BPSlope(p[i], p[BPCurve::LENGTH - 1]);
+        for (int i = 0; i < 4 - 1; ++i) {
+            if (p[i][1] * p[4 - 1][1] < 0) {
+                float s = BPISlope_(p[i], p[4 - 1]);
                 if (s < current) {
                     current = s;
                     k = i;
@@ -266,9 +243,9 @@ static inline int BPScanConvex(float ts[], const BPCurve & p)
         }
         if (k >= 0) {
             current = 0;
-            for (int i = k + 1; i < BPCurve::LENGTH; ++i) {
+            for (int i = k + 1; i < 4; ++i) {
                 if (p[i][1] * p[k][1] < 0) {
-                    float s = BPSlope(p[i], p[k]);
+                    float s = BPISlope_(p[i], p[k]);
                     if (current < s) {
                         current = s;
                         l = i;
@@ -276,17 +253,17 @@ static inline int BPScanConvex(float ts[], const BPCurve & p)
                 }
             }
             if (l >= 0) {
-                ts[n++] = BPDist(p[k], p[l]);
+                ts[n++] = BPIDist_(p[k], p[l]);
             }
         }
     }
     return n;
 }
 
-static inline bool BPXCheck(float rng[2], const BPCurve& curve)
+static inline bool BPIXCheck_(float rng[2], const BPCurve& curve)
 {
     float t[4] = { 0 };
-    int nn = BPScanConvex(t, curve);
+    int nn = BPIScanConvex_(t, curve);
     if (nn) {
         float t0 = t[0];
         float t1 = t[0];
@@ -303,21 +280,21 @@ static inline bool BPXCheck(float rng[2], const BPCurve& curve)
     return false;
 }
 
-static inline bool BPGetRangeU(float out[2], const BezierPatch& patch)
+static inline bool BPIGetRangeU_(float out[2], const BezierPatch& bp)
 {
-    float t0 = 1;
-    float t1 = 0;
+    float t0 = 1.0f;
+    float t1 = 0.0f;
     BPCurve curve;
-    float delta = 1.0 / (N - 1);
-    for (int i = 0; i < N; ++i) {
+    float delta = 1.0 / (4 - 1);
+    for (int i = 0; i < 4; ++i) {
         curve[i][0] = i*delta;
     }
     float rng[2];
-    for (int j = 0; j < N; ++j) {
-        for (int i = 0; i < N; ++i) {
-            curve[i][1] = (patch.Get(i, j))[1];
+    for (int j = 0; j < 4; ++j) {
+        for (int i = 0; i < 4; ++i) {
+            curve[i][1] = (bp.Get(i, j))[1];
         }
-        if (BPXCheck(rng, curve)) {
+        if (BPIXCheck_(rng, curve)) {
             t0 = std::min(t0, rng[0]);
             t1 = std::max(t1, rng[1]);
         }
@@ -330,21 +307,21 @@ static inline bool BPGetRangeU(float out[2], const BezierPatch& patch)
     return true;
 }
 
-static inline bool BPGetRangeV(float out[2], const BezierPatch& patch)
+static inline bool BPIGetRangeV_(float out[2], const BezierPatch& bp)
 {
     float t0 = 1;
     float t1 = 0;
     BPCurve curve;
-    float delta = 1.0 / (N - 1);
-    for (int i = 0; i < N; ++i) {
+    float delta = 1.0 / (4 - 1);
+    for (int i = 0; i < 4; ++i) {
         curve[i][0] = i*delta;
     }
     float rng[2];
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            curve[j][1] = (patch.Get(i, j))[1];
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            curve[j][1] = (bp.Get(i, j))[1];
         }
-        if (BPXCheck(rng, curve)) {
+        if (BPIXCheck_(rng, curve)) {
             t0 = std::min(t0, rng[0]);
             t1 = std::max(t1, rng[1]);
         }
@@ -358,7 +335,7 @@ static inline bool BPGetRangeV(float out[2], const BezierPatch& patch)
 }
 
 
-static inline bool BPSolveBilinearPatch(float* t, float* u, float* v, float tmin, float tmax, float tt, float uu, float vv)
+static inline bool BPISolveBilinearPatch_(float* t, float* u, float* v, float tmin, float tmax, float tt, float uu, float vv)
 {
     if (tmin <= tt && tt <= tmax) {
         *t = tt;
@@ -369,7 +346,7 @@ static inline bool BPSolveBilinearPatch(float* t, float* u, float* v, float tmin
     return false;
 }
 
-static inline int BPSolve2(float root[2], float const coeff[3])
+static inline int BPISolve2_(float root[2], float const coeff[3])
 {
     float A = coeff[0];
     float B = coeff[1];
@@ -404,7 +381,7 @@ static inline int BPSolve2(float root[2], float const coeff[3])
     }
 }
 
-static inline float BPComputeU(float A1, float A2, float B1, float B2, float C1, float C2, float D1, float D2, float v)
+static inline float BPIComputeU_(float A1, float A2, float B1, float B2, float C1, float C2, float D1, float D2, float v)
 {
     //return div((v*(C1-C2)+(D1-D2)),(v*(A2-A1)+(B2-B1)));
     float a = v*A2 + B2;
@@ -417,12 +394,12 @@ static inline float BPComputeU(float A1, float A2, float B1, float B2, float C1,
     }
 }
 
-static inline float BPComputeT(float a, float b, float c, float d, float iq, float u, float v)
+static inline float BPIComputeT_(float a, float b, float c, float d, float iq, float u, float v)
 {
     return ((u*v)*a + u*b + v*c + d)*iq;
 }
 
-static inline bool BPTestBilinearPatch(float *t, float *u, float *v, const float3 p[4], float tmin, float tmax, float uvMargin)
+static inline bool BPITestBilinearPatch_(float *t, float *u, float *v, const float3 p[4], float tmin, float tmax, float uvMargin)
 {
     trace("Test bilinear (%f, %f, %f) (%f, %f, %f), (%f, %f, %f), (%f, %f, %f)\n",
         p[0][0], p[0][1], p[0][2],
@@ -460,7 +437,7 @@ static inline bool BPTestBilinearPatch(float *t, float *u, float *v, const float
     float coeff[] = { F1,F2,F3 };
     float root[2] = {};
     //    printf("<%f, %f, %f>\n", F1, F2, F3);
-    int nRet = BPSolve2(root, coeff);
+    int nRet = BPISolve2_(root, coeff);
 
     if (nRet) {
         bool bRet = false;
@@ -470,14 +447,14 @@ static inline bool BPTestBilinearPatch(float *t, float *u, float *v, const float
             trace(" vv = %f, ", vv);
             if (0 - uvMargin <= vv && vv <= 1 + uvMargin) {//TODO
                 vv = std::max(float(0), std::min(vv, float(1)));
-                float uu = BPComputeU(A1, A2, B1, B2, C1, C2, D1, D2, vv);
+                float uu = BPIComputeU_(A1, A2, B1, B2, C1, C2, D1, D2, vv);
                 trace(" uu = %f, ", uu);
                 if (0 - uvMargin <= uu && uu <= 1 + uvMargin) {//TODO
                     uu = std::max(float(0), std::min(uu, float(1)));
-                    float tt = BPComputeT(a[nPlane], b[nPlane], c[nPlane], d[nPlane],
+                    float tt = BPIComputeT_(a[nPlane], b[nPlane], c[nPlane], d[nPlane],
                         float(1), uu, vv);
                     trace("uv=(%f, %f)", uu, vv);
-                    if (BPSolveBilinearPatch(t, u, v, tmin, tmax, tt, uu, vv)) {
+                    if (BPISolveBilinearPatch_(t, u, v, tmin, tmax, tt, uu, vv)) {
                         tmax = *t;
                         bRet = true;
                     }
@@ -491,7 +468,7 @@ static inline bool BPTestBilinearPatch(float *t, float *u, float *v, const float
     return false;
 }
 
-static inline bool BPTestTriangle(float *tt, float *uu, float *vv,
+static inline bool BPITestTriangle_(float *tt, float *uu, float *vv,
     const float3& p0, const float3& p1, const float3& p2, const float3& org, const float3& dir, float tmin, float tmax)
 {
     float t, u, v;
@@ -546,7 +523,7 @@ static inline bool BPTestTriangle(float *tt, float *uu, float *vv,
 }
 
 
-static inline bool BPTestQuadPlane(float *t, float *u, float *v,
+static inline bool BPITestQuadPlane_(float *t, float *u, float *v,
     const float3 p[4], const float3& org, const float3& dir, float tmin, float tmax)
 {
     const float3& p00 = p[0];
@@ -556,7 +533,7 @@ static inline bool BPTestQuadPlane(float *t, float *u, float *v,
 
     float tt, uu, vv;
     bool bRet = false;
-    if (BPTestTriangle(&tt, &uu, &vv, p00, p01, p10, org, dir, tmin, tmax))
+    if (BPITestTriangle_(&tt, &uu, &vv, p00, p01, p10, org, dir, tmin, tmax))
     {
         float ww = float(1) - (uu + vv);
         *u = ww*float(0) + uu*float(0) + vv*float(1);//00 - 01 - 10
@@ -565,7 +542,7 @@ static inline bool BPTestQuadPlane(float *t, float *u, float *v,
         tmax = tt;
         bRet = true;
     }
-    if (BPTestTriangle(&tt, &uu, &vv, p10, p01, p11, org, dir, tmin, tmax))
+    if (BPITestTriangle_(&tt, &uu, &vv, p10, p01, p11, org, dir, tmin, tmax))
     {
         float ww = float(1) - (uu + vv);
         *u = ww*float(1) + uu*float(0) + vv*float(1);//10 - 01 - 11
@@ -638,7 +615,7 @@ bool BezierPatchIntersectionImpl::Test(BezierPatchHit& info, const Ray& r, float
 
 bool BezierPatchIntersectionImpl::testInternal(BezierPatchHit& info, const Ray& r, float tmin, float tmax)
 {
-    float4x4 mat = BPRayTransform(r.orig, r.dir); // getZAlign
+    float4x4 mat = BPIZAlign_(r.orig, r.dir); // getZAlign
     BezierPatch patch(m_patch, mat);
 
     bool bRet = false;
@@ -740,7 +717,7 @@ bool BezierPatchIntersectionImpl::testBezierClipU(UVT& info, const BezierPatch &
     int level, int max_level, float eps)
 {
     BezierPatch tpatch(patch);
-    BPRotateU(tpatch);
+    BPIRotateU_(tpatch);
 
     if (++m_count > MAX_ITERATION || u0 > u1 || v0 > v1) {
         return false;
@@ -756,8 +733,8 @@ bool BezierPatchIntersectionImpl::testBezierClipU(UVT& info, const BezierPatch &
         return false;
     }
 
-    bool bClip = BPIsClip(level);
-    if (bClip && (BPIsEps(min, max, eps) || BPIsLevel(level, max_level))) {
+    bool bClip = BPIIsClip_(level);
+    if (bClip && (BPIIsEps_(min, max, eps) || BPIIsLevel_(level, max_level))) {
         return testBezierClipL(info, patch, u0, u1, v0, v1, zmin, zmax, level);
     }
     else {
@@ -767,7 +744,7 @@ bool BezierPatchIntersectionImpl::testBezierClipU(UVT& info, const BezierPatch &
 
         if (m_useBezierClip & bClip) {
             float rng[2];
-            if (BPGetRangeU(rng, tpatch)) {
+            if (BPIGetRangeU_(rng, tpatch)) {
                 tt0 = rng[0];
                 tt1 = rng[1];
                 tw = tt1 - tt0;
@@ -781,7 +758,6 @@ bool BezierPatchIntersectionImpl::testBezierClipU(UVT& info, const BezierPatch &
             float ut[] = { u0,um,um,u1 };
 
             int order[2] = { 0,1 };
-            BPCoarseSort(order, tmp);
             bool bRet = false;
             if (ut[0] > ut[1]) std::swap(ut[0], ut[1]);
             if (ut[2] > ut[3]) std::swap(ut[2], ut[3]);
@@ -812,7 +788,7 @@ bool BezierPatchIntersectionImpl::testBezierClipV(UVT& info, const BezierPatch& 
     int level, int max_level, float eps)
 {
     BezierPatch tpatch(patch);
-    BPRotateV(tpatch);
+    BPIRotateV_(tpatch);
 
     if (++m_count > MAX_ITERATION || u0 > u1 || v0 > v1) {
         return false;
@@ -831,8 +807,8 @@ bool BezierPatchIntersectionImpl::testBezierClipV(UVT& info, const BezierPatch& 
         return false;
     }
 
-    bool bClip = BPIsClip(level);
-    if (bClip && (BPIsEps(min, max, eps) || BPIsLevel(level, max_level))) {
+    bool bClip = BPIIsClip_(level);
+    if (bClip && (BPIIsEps_(min, max, eps) || BPIIsLevel_(level, max_level))) {
         return testBezierClipL(info, patch, u0, u1, v0, v1, zmin, zmax, level);
     }
     else {
@@ -842,7 +818,7 @@ bool BezierPatchIntersectionImpl::testBezierClipV(UVT& info, const BezierPatch& 
 
         if (m_useBezierClip & bClip) {
             float rng[2];
-            if (BPGetRangeV(rng, tpatch)) {
+            if (BPIGetRangeV_(rng, tpatch)) {
                 tt0 = rng[0];
                 tt1 = rng[1];
                 tw = tt1 - tt0;
@@ -856,7 +832,6 @@ bool BezierPatchIntersectionImpl::testBezierClipV(UVT& info, const BezierPatch& 
             float vt[] = { v0,vm,vm,v1 };
 
             int order[2] = { 0,1 };
-            BPCoarseSort(order, tmp);
             bool bRet = false;
             if (vt[0] > vt[1]) std::swap(vt[0], vt[1]);
             if (vt[2] > vt[3]) std::swap(vt[2], vt[3]);
@@ -894,12 +869,12 @@ bool BezierPatchIntersectionImpl::testBezierClipL(UVT& info, const BezierPatch& 
     if (m_directBilinear) {
         float3 P[4] = {
             patch.Get(  0,   0),
-            patch.Get(N-1,   0),
-            patch.Get(  0, N-1),
-            patch.Get(N-1, N-1),
+            patch.Get(4-1,   0),
+            patch.Get(  0, 4-1),
+            patch.Get(4-1, 4-1),
         };
         if (!m_useTriangle) {
-            if (BPTestBilinearPatch(&t, &u, &v, P, zmin, zmax, m_uvMargin)) {
+            if (BPITestBilinearPatch_(&t, &u, &v, P, zmin, zmax, m_uvMargin)) {
                 u = u0*(1 - u) + u1*u;
                 v = v0*(1 - v) + v1*v;
                 info.u = u;
@@ -910,7 +885,7 @@ bool BezierPatchIntersectionImpl::testBezierClipL(UVT& info, const BezierPatch& 
             }
         }
         else {
-            if (BPTestQuadPlane(&t, &u, &v, P, float3(0.0f), float3(0.0f, 0.0f, 1.0f), zmin, zmax)) {
+            if (BPITestQuadPlane_(&t, &u, &v, P, float3(0.0f), float3(0.0f, 0.0f, 1.0f), zmin, zmax)) {
                 u = u0*(1 - u) + u1*u;
                 v = v0*(1 - v) + v1*v;
                 info.u = u;
@@ -930,8 +905,8 @@ bool BezierPatchIntersectionImpl::testBezierClipL(UVT& info, const BezierPatch& 
     }
 
     bool bRet = false;
-    int nPu = N - 1;
-    int nPv = N - 1;
+    int nPu = 4 - 1;
+    int nPv = 4 - 1;
 
     float du = 1.0f / nPu;
     float dv = 1.0f / nPv;
@@ -947,7 +922,7 @@ bool BezierPatchIntersectionImpl::testBezierClipL(UVT& info, const BezierPatch& 
             P[2] = patch.Get(  i, j+1);
             P[3] = patch.Get(i+1, j+1);
             if (!m_useTriangle) {
-                if (BPTestBilinearPatch(&t, &u, &v, P, zmin, zmax, m_uvMargin)) {
+                if (BPITestBilinearPatch_(&t, &u, &v, P, zmin, zmax, m_uvMargin)) {
 
                     u = glm::mix(i*du, (i + 1)*du, u);
                     v = glm::mix(j*dv, (j + 1)*dv, v);
@@ -968,7 +943,7 @@ bool BezierPatchIntersectionImpl::testBezierClipL(UVT& info, const BezierPatch& 
                 }
             }
             else {
-                if (BPTestQuadPlane(&t, &u, &v, P, float3(0, 0, 0), float3(0, 0, 1), zmin, zmax)) {
+                if (BPITestQuadPlane_(&t, &u, &v, P, float3(0, 0, 0), float3(0, 0, 1), zmin, zmax)) {
                     u = glm::mix(i*du, (i + 1)*du, u);
                     v = glm::mix(j*dv, (j + 1)*dv, v);
 
@@ -1006,13 +981,12 @@ bool BezierPatchIntersectionImpl::testBezierClipL(UVT& info, const BezierPatch& 
 }
 
 bool BezierPatchIntersectionImpl::testBezierClipRangeU(UVT& info, const BezierPatch& patch,
-    float u0, float u1,
-    float v0, float v1, float zmin, float zmax,
+    float u0, float u1, float v0, float v1, float zmin, float zmax,
     int level, int max_level, float eps)
 {
     BezierPatch mpatch(patch, u0, u1, v0, v1);
     BezierPatch tpatch(mpatch);
-    BPRotateU(tpatch);
+    BPIRotateU_(tpatch);
 
     float3 min, max;
     tpatch.GetMinMax(min, max, eps*1e-3f);
@@ -1024,8 +998,8 @@ bool BezierPatchIntersectionImpl::testBezierClipRangeU(UVT& info, const BezierPa
         return false;
     }
 
-    bool bClip = BPIsClip(level);
-    if (bClip && (BPIsEps(min, max, eps) || BPIsLevel(level, max_level))) {
+    bool bClip = BPIIsClip_(level);
+    if (bClip && (BPIIsEps_(min, max, eps) || BPIIsLevel_(level, max_level))) {
         return testBezierClipL(info, mpatch, u0, u1, v0, v1, zmin, zmax, level);
     }
     else {
@@ -1035,7 +1009,7 @@ bool BezierPatchIntersectionImpl::testBezierClipRangeU(UVT& info, const BezierPa
 
         if (m_useBezierClip & bClip) {
             float rng[2];
-            if (BPGetRangeU(rng, tpatch)) {
+            if (BPIGetRangeU_(rng, tpatch)) {
                 tt0 = rng[0];
                 tt1 = rng[1];
                 tw = tt1 - tt0;
@@ -1074,7 +1048,7 @@ bool BezierPatchIntersectionImpl::testBezierClipRangeV(UVT& info, const BezierPa
 {
     BezierPatch mpatch(patch, u0, u1, v0, v1);
     BezierPatch tpatch(mpatch);
-    BPRotateV(tpatch);
+    BPIRotateV_(tpatch);
 
     float3 min, max;
     tpatch.GetMinMax(min, max, eps*1e-3f);
@@ -1085,8 +1059,8 @@ bool BezierPatchIntersectionImpl::testBezierClipRangeV(UVT& info, const BezierPa
         return false;
     }
 
-    bool bClip = BPIsClip(level);
-    if (bClip && (BPIsEps(min, max, eps) || BPIsLevel(level, max_level))) {
+    bool bClip = BPIIsClip_(level);
+    if (bClip && (BPIIsEps_(min, max, eps) || BPIIsLevel_(level, max_level))) {
         return testBezierClipL(info, mpatch, u0, u1, v0, v1, zmin, zmax, level);
     }
     else {
@@ -1096,7 +1070,7 @@ bool BezierPatchIntersectionImpl::testBezierClipRangeV(UVT& info, const BezierPa
 
         if (m_useBezierClip & bClip) {
             float rng[2];
-            if (BPGetRangeV(rng, tpatch)) {
+            if (BPIGetRangeV_(rng, tpatch)) {
                 tt0 = rng[0];
                 tt1 = rng[1];
                 tw = tt1 - tt0;
@@ -1130,14 +1104,192 @@ bool BezierPatchIntersectionImpl::testBezierClipRangeV(UVT& info, const BezierPa
     return false;
 }
 
-bool BezierPatchRaycast(const BezierPatch &bp, const Ray &ray, float max_distance, BezierPatchHit &hit)
+
+
+
+bool BezierPatchRaycast(const BezierPatch &bp, const Ray &ray, float zmax, BezierPatchHit &hit)
 {
     BezierPatchIntersectionImpl impl(bp);
-    return impl.Test(hit, ray, 0.0f, max_distance);
+    return impl.Test(hit, ray, 0.0f, zmax);
 }
 
-bool BezierPatchRaycast(const BezierPatch &bp, const float4x4 &bptrans, const Ray &ray, float max_distance, BezierPatchHit &hit)
+bool BezierPatchRaycast(const BezierPatch &bp, const float4x4 &bptrans, const Ray &ray, float zmax, BezierPatchHit &hit)
 {
     BezierPatchIntersectionImpl impl(BezierPatch(bp, bptrans));
-    return impl.Test(hit, ray, 0.0f, max_distance);
+    return impl.Test(hit, ray, 0.0f, zmax);
 }
+
+
+// debugging compute shader 
+/*
+#ifndef BPI_MAX_STACK_DEPTH
+#define BPI_MAX_STACK_DEPTH 20
+#endif
+#ifndef BPI_MAX_LOOP
+#define BPI_MAX_LOOP 1000
+#endif
+#ifndef BPI_EPS
+#define BPI_EPS 0.1
+#endif
+
+struct BPIWorkingBuffer
+{
+    BezierPatch source; // input
+    BezierPatch crop;
+    BezierPatch rotate;
+    float4 uv_range; // input
+};
+
+bool BPITriangleIntersect_(
+    float& tout, float& uout, float& vout,
+    float3 p0, float3 p1, float3 p2,
+    float3 ray_org, float3 ray_dir)
+{
+    float3 e1, e2;
+    float3 p, s, q;
+
+    e1 = p1 - p0;
+    e2 = p2 - p0;
+    p = cross(ray_dir, e2);
+
+    float det = dot(e1, p);
+    float inv_det = 1.0 / det;
+
+    s = ray_org - p0;
+    q = cross(s, e1);
+
+    float u = dot(s, p) * inv_det;
+    float v = dot(q, ray_dir) * inv_det;
+    float t = dot(e2, q) * inv_det;
+
+    if (u < 0.0 || u > 1.0) return false;
+    if (v < 0.0 || u + v > 1.0) return false;
+    if (t < 0.0 || t > tout) return false;
+
+    tout = t;
+    uout = u;
+    vout = v;
+    return true;
+}
+
+bool BPITestBezierClipL_(const BezierPatch &bp, float3 &uvt, const float2 &uv0, const float2 &uv1, float zmin, float zmax)
+{
+    // TODO (NO_DIRECT)
+    // DIRECT_BILINEAR
+    float3 p0, p1, p2, p3;
+    float3 ray_org = float3(0.0, 0.0, 0.0);
+    float3 ray_dir = float3(0.0, 0.0, 1.0);
+    p0 = bp[0];
+    p1 = bp[3];
+    p2 = bp[12];
+    p3 = bp[15];
+    bool ret = false;
+    float t = zmax, uu = 0.0, vv = 0.0;
+    if (BPITriangleIntersect_(t, uu, vv, p0, p2, p1, ray_org, ray_dir)) {
+        float ww = 1.0 - (uu + vv);
+        float u = ww*0.0 + uu*0.0 + vv*1.0; //00 - 01 - 10
+        float v = ww*0.0 + uu*1.0 + vv*0.0; //00 - 01 - 10
+        uvt.x = glm::mix(uv0.x, uv1.x, u);
+        uvt.y = glm::mix(uv0.y, uv1.y, v);
+        uvt.z = t;
+        ret = true;
+    }
+    if (BPITriangleIntersect_(t, uu, vv, p1, p2, p3, ray_org, ray_dir)) {
+        float ww = 1.0 - (uu + vv);
+        float u = ww*1.0 + uu*0.0 + vv*1.0; //10 - 01 - 11
+        float v = ww*0.0 + uu*1.0 + vv*1.0; //10 - 01 - 11
+        uvt.x = glm::mix(uv0.x, uv1.x, u);
+        uvt.y = glm::mix(uv0.y, uv1.y, v);
+        uvt.z = t;
+        ret = true;
+    }
+    return ret;
+}
+
+bool BPITestBezierPatch_(BPIWorkingBuffer &work, BezierPatchHit &info, float zmin, float zmax, float eps)
+{
+    // non-recursive iteration
+    float4 range_stack[BPI_MAX_STACK_DEPTH];
+    int stack_index = 0;
+    range_stack[0] = work.uv_range;
+
+    int i;
+    for (i = 0; i < BPI_MAX_LOOP && stack_index >= 0; ++i) {
+
+        // pop a patch range and crop
+        float u0 = range_stack[stack_index].x;
+        float u1 = range_stack[stack_index].y;
+        float v0 = range_stack[stack_index].z;
+        float v1 = range_stack[stack_index].w;
+        --stack_index;
+
+        work.source.Crop(work.crop, float2(u0, v0), float2(u1, v1));
+        float3 LU = work.crop[3] - work.crop[0];
+        float3 LV = work.crop[12] - work.crop[0];
+        bool clipU = length(LU) > length(LV);
+
+        float3 bmin, bmax;
+        // rotate and bmin/bmax
+        float3 dx = clipU
+            ? work.crop[12] - work.crop[0] + work.crop[15] - work.crop[3]
+            : work.crop[3] - work.crop[0] + work.crop[15] - work.crop[12];
+        work.rotate = work.crop;
+        work.rotate.Transform(BPIRotate2D_(dx));
+        work.rotate.GetMinMax(bmin, bmax, eps*1e-3);
+
+        // out
+        if (0.0 < bmin.x || bmax.x < 0.0 || 0.0 < bmin.y || bmax.y < 0.0 || bmax.z < zmin || zmax < bmin.z) {
+            continue;
+        }
+
+        // if it's small enough, test bilinear.
+        if ((bmax.x - bmin.x) < eps || (bmax.y - bmin.y) < eps) {
+            float3 uvt;
+            if (BPITestBezierClipL_(work.crop, uvt, float2(u0, v0), float2(u1, v1), zmin, zmax)) {
+                info.uv.x = uvt.x;
+                info.uv.y = uvt.y;
+                info.t = uvt.z;
+                zmax = info.t;
+                return true;
+            }
+            // find another intersection
+            continue;
+        }
+        info.clip_level = i;
+
+        // push children ranges
+        if (clipU) {
+            float um = (u0 + u1)*0.5;
+            range_stack[++stack_index] = float4(u0, um, v0, v1);
+            range_stack[++stack_index] = float4(um, u1, v0, v1);
+        }
+        else {
+            float vm = (v0 + v1)*0.5;
+            range_stack[++stack_index] = float4(u0, u1, v0, vm);
+            range_stack[++stack_index] = float4(u0, u1, vm, v1);
+        }
+
+        if (stack_index >= BPI_MAX_STACK_DEPTH - 1) break;
+    }
+    return false;
+}
+
+bool BezierPatchRaycast(const BezierPatch &bp, const Ray &ray, float zmax, BezierPatchHit &hit)
+{
+    BPIWorkingBuffer work;
+    work.source = bp;
+    work.source.Transform(BPIZAlign_(ray.orig, ray.dir));
+    work.uv_range = float4(0.0f, 1.0f, 0.0f, 1.0f);
+    return BPITestBezierPatch_(work, hit, 0.0f, zmax, BPI_EPS);
+}
+
+bool BezierPatchRaycast(const BezierPatch &bp, const float4x4 &bptrans, const Ray &ray, float zmax, BezierPatchHit &hit)
+{
+    BPIWorkingBuffer work;
+    work.source = bp;
+    work.source.Transform(bptrans);
+    work.source.Transform(BPIZAlign_(ray.orig, ray.dir));
+    work.uv_range = float4(0.0f, 1.0f, 0.0f, 1.0f);
+    return BPITestBezierPatch_(work, hit, 0.0f, zmax, BPI_EPS);
+}
+*/

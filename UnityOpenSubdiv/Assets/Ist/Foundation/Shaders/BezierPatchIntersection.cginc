@@ -24,10 +24,10 @@ bool BPIRaycast(BezierPatch bp, Ray ray, float zmin, float zmax, out BezierPatch
     #define BPI_MAX_STACK_DEPTH 20
 #endif
 #ifndef BPI_MAX_LOOP
-    #define BPI_MAX_LOOP 100
+    #define BPI_MAX_LOOP 1000
 #endif
 #ifndef BPI_EPS
-    #define BPI_EPS 1e-3
+    #define BPI_EPS 0.01
 #endif
 
 struct BPIWorkingBuffer
@@ -35,24 +35,17 @@ struct BPIWorkingBuffer
     BezierPatch source; // input
     BezierPatch crop;
     BezierPatch rotate;
-    BezierPatch tmp0;
     float4 uv_range; // input
 };
 
-
-void BPICrop_(inout BPIWorkingBuffer work, float u0, float u1, float v0, float v1)
-{
-    BPCropU(work.tmp0, work.source, u0, u1);
-    BPCropV(work.crop, work.tmp0, v0, v1);
-}
 
 float3x3 BPIRotate2D_(float3 dx)
 {
     float2 x = normalize(dx.xy);
     float2 y = float2(-x[1], x[0]);
     return float3x3(
-        x[0], x[1], 0.0,
-        y[0], y[1], 0.0,
+        x[0], y[0], 0.0,
+        x[1], y[1], 0.0,
          0.0,  0.0, 1.0
     );
 }
@@ -90,7 +83,7 @@ bool BPITriangleIntersect_(
 }
 
 bool BPITestBezierClipL_(
-    BezierPatch patch, inout BezierPatchHit info, float u0, float u1, float v0, float v1, float zmin, float zmax)
+    BezierPatch patch, out float3 uvt, float2 uv0, float2 uv1, float zmin, float zmax)
 {
     // TODO (NO_DIRECT)
     // DIRECT_BILINEAR
@@ -107,18 +100,18 @@ bool BPITestBezierClipL_(
         float ww = 1.0 - (uu + vv);
         float u = ww*0.0 + uu*0.0 + vv*1.0; //00 - 01 - 10
         float v = ww*0.0 + uu*1.0 + vv*0.0; //00 - 01 - 10
-        info.u = lerp(u0,u1,u);
-        info.v = lerp(v0,v1,v);
-        info.t = t;
+        uvt.x = lerp(uv0.x, uv1.x, u);
+        uvt.y = lerp(uv0.y, uv1.y, v);
+        uvt.z = t;
         ret = true;
     }
     if (BPITriangleIntersect_(t, uu, vv, p1, p2, p3, ray_org, ray_dir)) {
         float ww = 1.0 - (uu + vv);
         float u = ww*1.0 + uu*0.0 + vv*1.0; //10 - 01 - 11
         float v = ww*0.0 + uu*1.0 + vv*1.0; //10 - 01 - 11
-        info.u = lerp(u0,u1,u);
-        info.v = lerp(v0,v1,v);
-        info.t = t;
+        uvt.x = lerp(uv0.x, uv1.x, u);
+        uvt.y = lerp(uv0.y, uv1.y, v);
+        uvt.z = t;
         ret = true;
     }
     return ret;
@@ -140,13 +133,12 @@ bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info,
     info = (BezierPatchHit)0;
 
     // non-recursive iteration
-    bool ret = false;
-
     float4 range_stack[BPI_MAX_STACK_DEPTH];
     int stack_index = 0;
     range_stack[0] = work.uv_range;
 
-    for (int i = 0; i < BPI_MAX_LOOP && stack_index >= 0; ++i) {
+    int i;
+    for (i = 0; i < BPI_MAX_LOOP && stack_index >= 0; ++i) {
 
         // pop a patch range and crop
         float u0 = range_stack[stack_index].x;
@@ -155,7 +147,7 @@ bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info,
         float v1 = range_stack[stack_index].w;
         --stack_index;
 
-        BPICrop_(work, u0, u1, v0, v1);
+        BPCrop(work.source, work.crop, float2(u0, v0), float2(u1, v1));
         float3 LU = work.crop.cp[3] - work.crop.cp[0];
         float3 LV = work.crop.cp[12] - work.crop.cp[0];
         bool clipU = length(LU) > length(LV);
@@ -176,14 +168,18 @@ bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info,
 
         // if it's small enough, test bilinear.
         if ((bmax.x - bmin.x) < eps || (bmax.y - bmin.y) < eps) {
-            if (BPITestBezierClipL_(work.crop, info, u0, u1, v0, v1, zmin, zmax)) {
-                ret = true;
+            float3 uvt;
+            if (BPITestBezierClipL_(work.crop, uvt, float2(u0, v0), float2(u1, v1), zmin, zmax)) {
+                info.u = uvt.x;
+                info.v = uvt.y;
+                info.t = uvt.z;
+                zmax = info.t;
+                return true;
             }
-            zmax = info.t;
-            info.clip_level = i;
             // find another intersection
             continue;
         }
+        info.clip_level = i;
 
         // push children ranges
         if (clipU) {
@@ -196,9 +192,10 @@ bool BPITestBezierPatch_(inout BPIWorkingBuffer work, inout BezierPatchHit info,
             range_stack[++stack_index] = float4(u0, u1, v0, vm);
             range_stack[++stack_index] = float4(u0, u1, vm, v1);
         }
+
         if (stack_index >= BPI_MAX_STACK_DEPTH - 1) break;
     }
-    return ret;
+    return false;
 }
 
 

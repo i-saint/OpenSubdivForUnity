@@ -80,7 +80,7 @@ public class BezierPatchRaycaster : MonoBehaviour
     public bool m_show_croped = false;
 
 
-    public void UpdatePreviewMesh()
+    public void TestEvaluate()
     {
         const int div = 16;
         const int divsq = div * div;
@@ -156,7 +156,7 @@ public class BezierPatchRaycaster : MonoBehaviour
         }
     }
 
-    void Split()
+    void TestSplit()
     {
         if(m_bpatch == null) { return; }
 
@@ -196,7 +196,7 @@ public class BezierPatchRaycaster : MonoBehaviour
         }
     }
 
-    void Crop()
+    void TestCrop()
     {
         if (m_bpatch == null) { return; }
 
@@ -257,7 +257,6 @@ public class BezierPatchRaycaster : MonoBehaviour
 
     void Update()
     {
-        UpdatePreviewMesh();
     }
 
 
@@ -348,12 +347,17 @@ public class BezierPatchRaycaster : MonoBehaviour
 
         if (GUI.Button(new Rect(10, 10, 150, 30), "Split"))
         {
-            Split();
+            TestSplit();
         }
 
         if (GUI.Button(new Rect(10, 50, 150, 30), "Crop"))
         {
-            Crop();
+            TestCrop();
+        }
+
+        if (GUI.Button(new Rect(10, 90, 150, 30), "Evaluate"))
+        {
+            TestEvaluate();
         }
     }
 }
