@@ -114,21 +114,7 @@ namespace Ist
         public const int size = 220;
 
         public MPGPColliderInfo info;
-        // raw bezier patch (control points) data
-        public Vector3
-            cp00, cp01, cp02, cp03,
-            cp10, cp11, cp12, cp13,
-            cp20, cp21, cp22, cp23,
-            cp30, cp31, cp32, cp33;
-
-        public void AssignControlPoints(Vector3[] src)
-        {
-            // I hate C# :(
-            cp00 = src[0]; cp01 = src[1]; cp02 = src[2]; cp03 = src[3];
-            cp10 = src[4]; cp11 = src[5]; cp12 = src[6]; cp13 = src[7];
-            cp20 = src[8]; cp21 = src[9]; cp22 = src[10]; cp23 = src[11];
-            cp30 = src[12]; cp31 = src[13]; cp32 = src[14]; cp33 = src[15];
-        }
+        public BezierPatchRaw bp;
     }
 
 
@@ -136,7 +122,7 @@ namespace Ist
     public struct MPGPWorldIData
     {
         public const int size = 16;
-    
+
         public int num_active_particles;
         public uint id_seed;
         public int dummy2;

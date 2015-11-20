@@ -19,6 +19,32 @@ namespace Ist
             cp04, cp05, cp06, cp07,
             cp08, cp09, cp10, cp11,
             cp12, cp13, cp14, cp15;
+
+        public void Transform(ref Matrix4x4 mat)
+        {
+            uosBPTransform(ref cp00, ref mat);
+        }
+
+        public void GetMinMax(ref Vector3 omin, ref Vector3 omax, float eps=0.0f)
+        {
+            uosBPGetMinMax(ref cp00, ref omin, ref omax, eps);
+        }
+
+        public void GetAABB(ref BezierPatchAABB dst)
+        {
+            Vector3 min = Vector3.zero;
+            Vector3 max = Vector3.zero;
+            uosBPGetMinMax(ref cp00, ref min, ref max, 0.0f);
+            dst.center = (max + min) * 0.5f;
+            dst.extents = (max - min) * 0.5f;
+        }
+
+        [DllImport("UnityOpenSubdiv")]
+        static extern void uosBPTransform(ref Vector3 bp, ref Matrix4x4 mat);
+        [DllImport("UnityOpenSubdiv")]
+        static extern void uosBPGetMinMax(ref Vector3 bp, ref Vector3 omin, ref Vector3 omax, float eps);
+
+
     }
 
     [System.Serializable]
@@ -116,13 +142,9 @@ namespace Ist
 
         public void GetAABB(ref BezierPatchAABB dst)
         {
-            Vector3 min = cp[0];
-            Vector3 max = cp[0];
-            for(int i=1; i<cp.Length; ++i)
-            {
-                min = Vector3.Min(min, cp[i]);
-                max = Vector3.Max(max, cp[i]);
-            }
+            Vector3 min = Vector3.zero;
+            Vector3 max = Vector3.zero;
+            uosBPGetMinMax(ref cp[0], ref min, ref max, 0.0f);
             dst.center = (max + min) * 0.5f;
             dst.extents = (max - min) * 0.5f;
         }

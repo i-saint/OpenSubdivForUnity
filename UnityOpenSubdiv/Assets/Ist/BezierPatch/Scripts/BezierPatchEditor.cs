@@ -13,26 +13,36 @@ namespace Ist
         [SerializeField] bool m_lock;
         [SerializeField] Transform[] m_cpobj;
         [SerializeField] Mesh m_mesh;
+
         BezierPatchRaw[] m_bpatch_raw;
         BezierPatchAABB[] m_aabb;
+        bool m_dirty = true;
+
+
+        void UpdateBezierPatch()
+        {
+            if(!m_dirty) { return; }
+            if (m_bpatch_raw == null)
+            {
+                m_bpatch_raw = new BezierPatchRaw[1];
+                m_aabb = new BezierPatchAABB[1];
+            }
+
+            var trans = GetComponent<Transform>().localToWorldMatrix;
+            m_bpatch.GetRawData(ref m_bpatch_raw[0]);
+            m_bpatch_raw[0].Transform(ref trans);
+            m_bpatch_raw[0].GetAABB(ref m_aabb[0]);
+        }
 
         public override BezierPatchRaw[] GetBezierPatches()
         {
-            if(m_bpatch_raw == null)
-            {
-                m_bpatch_raw = new BezierPatchRaw[1];
-            }
-            m_bpatch.GetRawData(ref m_bpatch_raw[0]);
+            UpdateBezierPatch();
             return m_bpatch_raw;
         }
 
         public override BezierPatchAABB[] GetAABBs()
         {
-            if (m_aabb == null)
-            {
-                m_aabb = new BezierPatchAABB[1];
-            }
-            m_bpatch.GetAABB(ref m_aabb[0]);
+            UpdateBezierPatch();
             return m_aabb;
         }
 
@@ -153,7 +163,8 @@ namespace Ist
     
         void Update()
         {
-            if(m_lock)
+            m_dirty = true;
+            if (m_lock)
             {
                 DestroyControlPoints();
             }
