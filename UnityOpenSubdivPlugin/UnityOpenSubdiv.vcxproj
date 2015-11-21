@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BezierPatch\BezierPatch.cpp" />
+    <ClCompile Include="BezierPatch\BezierPatchConverter.cpp" />
     <ClCompile Include="BezierPatch\BezierPatchIntersection.cpp" />
     <ClCompile Include="GraphicsDevice\uosGraphicsDevice.cpp" />
     <ClCompile Include="GraphicsDevice\uosGraphicsDeviceD3D11.cpp" />
@@ -29,6 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BezierPatch\BezierPatch.h" />
+    <ClInclude Include="BezierPatch\BezierPatchConverter.h" />
     <ClInclude Include="BezierPatch\BezierPatchIntersection.h" />
     <ClInclude Include="GraphicsDevice\uosGraphicsDevice.h" />
     <ClInclude Include="pch.h" />
@@ -63,7 +65,7 @@
     <IntDir>$(SolutionDir)_tmp\$(ProjectName)_$(Platform)_$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir);External;External\glew-1.12.0\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir);External;External\opensubdiv;External\glew-1.12.0\include;$(IncludePath)</IncludePath>
     <LibraryPath>External\libs\x86_64;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)_out\$(ProjectName)_$(Platform)_$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)_tmp\$(ProjectName)_$(Platform)_$(Configuration)\</IntDir>

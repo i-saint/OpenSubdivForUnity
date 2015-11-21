@@ -5,8 +5,8 @@
 
 #ifdef uosWindows
     #include <windows.h>
-    //#pragma comment(lib, "osdCPU.lib")
-    //#pragma comment(lib, "osdGPU.lib")
+    #pragma comment(lib, "osdCPU.lib")
+    #pragma comment(lib, "regression_common_obj.lib")
 #else // uosWindows
 #endif // uosWindows
 

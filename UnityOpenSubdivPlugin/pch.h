@@ -30,7 +30,16 @@ typedef glm::mat4x4 float4x4;
 #endif
 
 #include <opensubdiv/far/topologyDescriptor.h>
+#include <opensubdiv/far/topologyRefiner.h>
 #include <opensubdiv/far/primvarRefiner.h>
+#include <opensubdiv/far/patchParam.h>
+#include <opensubdiv/far/stencilTable.h>
+#include <opensubdiv/far/stencilTableFactory.h>
+#include <opensubdiv/osd/bufferDescriptor.h>
+#include <opensubdiv/osd/cpuVertexBuffer.h>
+#include <opensubdiv/osd/cpuEvaluator.h>
+#include <opensubdiv/regression/common/far_utils.h>
+#include <opensubdiv/regression/common/shape_utils.h>
 
 #ifdef _WIN32
 #define uosWindows
