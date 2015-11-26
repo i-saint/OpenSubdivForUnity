@@ -19,7 +19,7 @@ private:
 
     OpenSubdiv::Osd::CpuVertexBuffer *m_vertex_buffer;
     OpenSubdiv::Far::TopologyRefiner *m_topology_refiner;
-    OpenSubdiv::Far::PatchParamTable m_patch_param_table;
+    OpenSubdiv::Far::PatchTable *m_patch_table;
     const OpenSubdiv::Far::StencilTable *m_stencil_table;
 };
 

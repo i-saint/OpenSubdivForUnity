@@ -7,10 +7,15 @@ using namespace OpenSubdiv::Osd;
 BezierPatchConverter::BezierPatchConverter(int num_vertices)
     : m_vertex_buffer(nullptr)
     , m_topology_refiner(nullptr)
+    , m_patch_table(nullptr)
     , m_stencil_table(nullptr)
 {
     m_vertex_buffer = CpuVertexBuffer::Create(3, num_vertices);
 
+    bool use_single_crease_patch = false;
+    int max_iteration_level = 1;
+
+    // topology refiner
     {
         Shape * shape = nullptr;
         // todo: build shape
@@ -20,6 +25,24 @@ BezierPatchConverter::BezierPatchConverter(int num_vertices)
         OpenSubdiv::Far::TopologyRefinerFactory<Shape>::Options opt(type, options);
         m_topology_refiner = OpenSubdiv::Far::TopologyRefinerFactory<Shape>::Create(*shape, opt);
     }
+    // refine
+    {
+        OpenSubdiv::Far::TopologyRefiner::AdaptiveOptions options(max_iteration_level);
+        options.useSingleCreasePatch = use_single_crease_patch;
+        m_topology_refiner->RefineAdaptive(options);
+    }
+
+    // patch table
+    {
+        OpenSubdiv::Far::PatchTableFactory::Options options;
+        options.useSingleCreasePatch = use_single_crease_patch;
+        options.endCapType = OpenSubdiv::Far::PatchTableFactory::Options::ENDCAP_BSPLINE_BASIS;
+        options.maxIsolationLevel = max_iteration_level;
+        m_patch_table = OpenSubdiv::Far::PatchTableFactory::Create(*m_topology_refiner, options);
+
+    }
+
+    // stencil table
     {
         OpenSubdiv::Far::StencilTableFactory::Options options;
         options.generateOffsets = true;
