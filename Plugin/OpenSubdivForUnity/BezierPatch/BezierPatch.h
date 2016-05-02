@@ -1,5 +1,4 @@
-#ifndef BezierPatch_h
-#define BezierPatch_h
+#pragma once
 
 class BezierPatch
 {
@@ -48,9 +47,3 @@ public:
 private:
     float3 m_cp[16];
 };
-
-
-
-
-
-#endif // BezierPatch_h

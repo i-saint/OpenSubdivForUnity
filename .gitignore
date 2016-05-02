@@ -13,6 +13,7 @@
 *.log
 *.tlog
 *.db
+*.opendb
 
 *.exe
 *.dll

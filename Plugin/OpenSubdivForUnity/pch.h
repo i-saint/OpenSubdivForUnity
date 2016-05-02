@@ -28,7 +28,6 @@ typedef glm::mat4x4 float4x4;
     #define xor ^
     #define xor_eq ^=
 #endif
-
 #include <opensubdiv/far/topologyDescriptor.h>
 #include <opensubdiv/far/topologyRefiner.h>
 #include <opensubdiv/far/primvarRefiner.h>
@@ -42,45 +41,4 @@ typedef glm::mat4x4 float4x4;
 #include <opensubdiv/osd/cpuEvaluator.h>
 #include <opensubdiv/regression/common/far_utils.h>
 #include <opensubdiv/regression/common/shape_utils.h>
-
-#ifdef _WIN32
-#define uosWindows
-#endif // _WIN32
-
-#define uosCLinkage extern "C"
-#ifdef _MSC_VER
-#define uosExport __declspec(dllexport)
-#else
-#define uosExport __attribute__((visibility("default")))
-#endif
-
-#ifdef uosDebug
-void uosDebugLogImpl(const char* fmt, ...);
-#define uosDebugLog(...) uosDebugLogImpl(__VA_ARGS__)
-#ifdef uosVerboseDebug
-#define uosDebugLogVerbose(...) uosDebugLogImpl(__VA_ARGS__)
-#else
-#define uosDebugLogVerbose(...)
-#endif
-#else
-#define uosDebugLog(...)
-#define uosDebugLogVerbose(...)
-#endif
-
-
-#ifdef uosWindows
-#include <windows.h>
-#ifdef min
-#undef min
-#undef max
-#endif
-
-#ifndef aiNoAutoLink
-#endif // aiNoAutoLink
-
-#ifdef uosSupportD3D11
-#include <d3d11.h>
-#endif // uosSupportD3D11
-
-#endif // uosWindows
 

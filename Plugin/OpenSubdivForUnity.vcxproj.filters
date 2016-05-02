@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="OpenSubdivForUnity\OpenSubdivForUnity.cpp">
+      <Filter>OpenSubdivForUnity</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenSubdivForUnity\pch.cpp">
+      <Filter>OpenSubdivForUnity</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenSubdivForUnity\BezierPatch\BezierPatch.cpp">
+      <Filter>OpenSubdivForUnity\BezierPatch</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenSubdivForUnity\BezierPatch\BezierPatchConverter.cpp">
+      <Filter>OpenSubdivForUnity\BezierPatch</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenSubdivForUnity\BezierPatch\BezierPatchIntersection.cpp">
+      <Filter>OpenSubdivForUnity\BezierPatch</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="OpenSubdivForUnity\pch.h">
+      <Filter>OpenSubdivForUnity</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenSubdivForUnity\OpenSubdivForUnity.h">
+      <Filter>OpenSubdivForUnity</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenSubdivForUnity\osuInternal.h">
+      <Filter>OpenSubdivForUnity</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenSubdivForUnity\BezierPatch\BezierPatch.h">
+      <Filter>OpenSubdivForUnity\BezierPatch</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenSubdivForUnity\BezierPatch\BezierPatchConverter.h">
+      <Filter>OpenSubdivForUnity\BezierPatch</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenSubdivForUnity\BezierPatch\BezierPatchIntersection.h">
+      <Filter>OpenSubdivForUnity\BezierPatch</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="OpenSubdivForUnity">
+      <UniqueIdentifier>{f44210f1-192b-4a77-ba1d-6607e886ec1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenSubdivForUnity\BezierPatch">
+      <UniqueIdentifier>{3629eddf-da68-425f-a8a9-492ff6970f20}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
