@@ -1,12 +1,13 @@
 ﻿#include "pch.h"
-#include "OpenSubdivForUnity.h"
 #include "osuInternal.h"
+#include "OpenSubdivForUnity.h"
+#include "BezierPatch/BezierPatch.h"
+#include "BezierPatch/BezierPatchIntersection.h"
 
 #ifdef osuWindows
     #include <windows.h>
     #pragma comment(lib, "osdCPU.lib")
     #pragma comment(lib, "regression_common_obj.lib")
-#else // osuWindows
 #endif // osuWindows
 
 

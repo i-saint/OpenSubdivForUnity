@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "osuInternal.h"
 #include "BezierPatch.h"
 #include "BezierPatchConverter.h"
 

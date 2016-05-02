@@ -27,3 +27,5 @@ Build/
 Hidden/
 Hidden.meta
 obj/
+OpenSubdivForUnity/*.sln
+OpenSubdivForUnity/*.csproj

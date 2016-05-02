@@ -69,6 +69,7 @@ $(SolutionDir)External\PatchLibrary\PatchLibraryProxy64.exe /target:Unity.exe /p
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>uosDebug;uosVerboseDebug;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>OpenSubdivForUnity</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -85,6 +86,7 @@ $(SolutionDir)External\PatchLibrary\PatchLibraryProxy64.exe /target:Unity.exe /p
       <AdditionalOptions>/Zo %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>aiMaster;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>Full</Optimization>
+      <AdditionalIncludeDirectories>OpenSubdivForUnity</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
