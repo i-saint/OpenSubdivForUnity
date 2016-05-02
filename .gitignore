@@ -12,13 +12,14 @@
 *.user
 *.log
 *.tlog
+*.db
 
-UnityOpenSubdiv/*.sln
-UnityOpenSubdiv/*.csproj
+*.exe
+*.dll
 
 _out/
 _tmp/
-Externals/
+External/
 Library/
 Temp/
 Build/
