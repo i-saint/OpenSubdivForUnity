@@ -61,7 +61,7 @@ GS_INPUT vert(appdata_full v)
 [maxvertexcount(4)]
 void geom(point GS_INPUT p[1], inout TriangleStream<FS_INPUT> triStream)
 {
-    float4x4 vp = mul(UNITY_MATRIX_MVP, _World2Object);
+    float4x4 vp = mul(UNITY_MATRIX_VP, unity_WorldToObject);
     float3 up = float3(0, 1, 0);
     float3 look = _WorldSpaceCameraPos - p[0].pos.xyz;
     look.y = 0;

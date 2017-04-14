@@ -90,7 +90,7 @@ vs_out vert(appdata_full v)
     ParticleTransform(v, pos, vel);
 
     vs_out O;
-    O.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+    O.vertex = UnityObjectToClipPos(v.vertex);
     O.uv = ComputeScreenPos(O.vertex);
     O.instance_pos = pos;
 

@@ -65,7 +65,7 @@ vs_out vert(appdata_full v)
     float range_inv_sq = 1.0 / (range*range);
 
     vs_out O;
-    O.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+    O.vertex = UnityObjectToClipPos(v.vertex);
     O.uv = ComputeScreenPos(O.vertex);
     O.instance_pos = float4(pos.xyz, range_inv_sq);
 

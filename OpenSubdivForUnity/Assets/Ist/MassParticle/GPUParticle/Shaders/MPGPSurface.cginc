@@ -191,7 +191,7 @@ int ParticleTransform(inout appdata_full v)
         int iid = ParticleTransform(v);
 
         vs_out o;
-        o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+        o.vertex = UnityObjectToClipPos(v.vertex);
         return o;
     }
         
