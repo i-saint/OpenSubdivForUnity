@@ -11,22 +11,22 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="OpenSubdivForUnity\BezierPatch\BezierPatch.cpp" />
-    <ClCompile Include="OpenSubdivForUnity\BezierPatch\BezierPatchConverter.cpp" />
-    <ClCompile Include="OpenSubdivForUnity\BezierPatch\BezierPatchIntersection.cpp" />
-    <ClCompile Include="OpenSubdivForUnity\OpenSubdivForUnity.cpp" />
-    <ClCompile Include="OpenSubdivForUnity\pch.cpp">
+    <ClCompile Include="osdi\BezierPatch\BezierPatch.cpp" />
+    <ClCompile Include="osdi\BezierPatch\BezierPatchConverter.cpp" />
+    <ClCompile Include="osdi\BezierPatch\BezierPatchIntersection.cpp" />
+    <ClCompile Include="osdi\osdi.cpp" />
+    <ClCompile Include="osdi\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Master|x64'">Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="OpenSubdivForUnity\BezierPatch\BezierPatch.h" />
-    <ClInclude Include="OpenSubdivForUnity\BezierPatch\BezierPatchConverter.h" />
-    <ClInclude Include="OpenSubdivForUnity\BezierPatch\BezierPatchIntersection.h" />
-    <ClInclude Include="OpenSubdivForUnity\OpenSubdivForUnity.h" />
-    <ClInclude Include="OpenSubdivForUnity\osuInternal.h" />
-    <ClInclude Include="OpenSubdivForUnity\pch.h" />
+    <ClInclude Include="osdi\BezierPatch\BezierPatch.h" />
+    <ClInclude Include="osdi\BezierPatch\BezierPatchConverter.h" />
+    <ClInclude Include="osdi\BezierPatch\BezierPatchIntersection.h" />
+    <ClInclude Include="osdi\osdi.h" />
+    <ClInclude Include="osdi\osuInternal.h" />
+    <ClInclude Include="osdi\pch.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{08361722-5520-47AC-A0C2-31E8A062B73F}</ProjectGuid>
@@ -60,8 +60,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PostBuildEvent>
-      <Command>xcopy /Yq $(TargetPath) $(SolutionDir)..\OpenSubdivForUnity\Assets\Ist\Plugins\x86_64\
-$(SolutionDir)External\PatchLibrary\PatchLibraryProxy64.exe /target:Unity.exe /patch:$(TargetPath)</Command>
+      <Command>xcopy /Yq $(TargetPath) $(SolutionDir)..\OpenSubdivForUnity\Assets\UTJ\OSD\Plugins\x86_64\</Command>
     </PostBuildEvent>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -69,7 +68,7 @@ $(SolutionDir)External\PatchLibrary\PatchLibraryProxy64.exe /target:Unity.exe /p
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>uosDebug;uosVerboseDebug;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>OpenSubdivForUnity</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>osdi</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -77,7 +76,7 @@ $(SolutionDir)External\PatchLibrary\PatchLibraryProxy64.exe /target:Unity.exe /p
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Master|x64'">
     <PostBuildEvent>
-      <Command>xcopy /Yq $(TargetPath) $(SolutionDir)..\OpenSubdivForUnity\Assets\Ist\Plugins\x86_64\</Command>
+      <Command>xcopy /Yq $(TargetPath) $(SolutionDir)..\OpenSubdivForUnity\Assets\UTJ\OSD\Plugins\x86_64\</Command>
     </PostBuildEvent>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -86,7 +85,7 @@ $(SolutionDir)External\PatchLibrary\PatchLibraryProxy64.exe /target:Unity.exe /p
       <AdditionalOptions>/Zo %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>aiMaster;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>Full</Optimization>
-      <AdditionalIncludeDirectories>OpenSubdivForUnity</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>osdi</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

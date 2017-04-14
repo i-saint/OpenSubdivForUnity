@@ -2,7 +2,7 @@
 #include "osuInternal.h"
 #include "BezierPatch.h"
 
-
+namespace osdi {
 
 static inline float3 BPEvaluate(float t, const float3 cp[4])
 {
@@ -296,3 +296,5 @@ void BezierPatch::Transform(const float4x4 &m)
 {
     ForEach([&m](float3 &cp) { cp = float3(m * float4(cp, 1.0f)); });
 }
+
+} // namespace osdi

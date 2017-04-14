@@ -3,6 +3,8 @@
 #include "BezierPatch.h"
 #include "BezierPatchConverter.h"
 
+namespace osdi {
+
 using namespace OpenSubdiv::Osd;
 
 BezierPatchConverter::BezierPatchConverter(int num_vertices)
@@ -78,3 +80,6 @@ const std::vector<BezierPatch>& BezierPatchConverter::GetBezierPatches() const
 {
     return m_bezier_patches;
 }
+
+} // namespace osdi
+

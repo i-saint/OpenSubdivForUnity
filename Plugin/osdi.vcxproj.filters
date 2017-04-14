@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="osdi\osdi.cpp">
+      <Filter>osdi</Filter>
+    </ClCompile>
+    <ClCompile Include="osdi\pch.cpp">
+      <Filter>osdi</Filter>
+    </ClCompile>
+    <ClCompile Include="osdi\BezierPatch\BezierPatch.cpp">
+      <Filter>osdi\BezierPatch</Filter>
+    </ClCompile>
+    <ClCompile Include="osdi\BezierPatch\BezierPatchConverter.cpp">
+      <Filter>osdi\BezierPatch</Filter>
+    </ClCompile>
+    <ClCompile Include="osdi\BezierPatch\BezierPatchIntersection.cpp">
+      <Filter>osdi\BezierPatch</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="osdi\pch.h">
+      <Filter>osdi</Filter>
+    </ClInclude>
+    <ClInclude Include="osdi\osdi.h">
+      <Filter>osdi</Filter>
+    </ClInclude>
+    <ClInclude Include="osdi\osuInternal.h">
+      <Filter>osdi</Filter>
+    </ClInclude>
+    <ClInclude Include="osdi\BezierPatch\BezierPatch.h">
+      <Filter>osdi\BezierPatch</Filter>
+    </ClInclude>
+    <ClInclude Include="osdi\BezierPatch\BezierPatchConverter.h">
+      <Filter>osdi\BezierPatch</Filter>
+    </ClInclude>
+    <ClInclude Include="osdi\BezierPatch\BezierPatchIntersection.h">
+      <Filter>osdi\BezierPatch</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="osdi">
+      <UniqueIdentifier>{f44210f1-192b-4a77-ba1d-6607e886ec1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="osdi\BezierPatch">
+      <UniqueIdentifier>{3629eddf-da68-425f-a8a9-492ff6970f20}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

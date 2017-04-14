@@ -1,5 +1,7 @@
 #pragma once
 
+namespace osdi {
+
 class BezierPatch
 {
 public:
@@ -37,7 +39,7 @@ public:
     void Transform(const float3x3 &m);
     void Transform(const float4x4 &m);
 
-    // F: void =>[](float3 &control_point);
+    // F: [](float3 &control_point) -> void
     template<class F>
     void ForEach(const F &f)
     {
@@ -47,3 +49,5 @@ public:
 private:
     float3 m_cp[16];
 };
+
+} // namespace osdi

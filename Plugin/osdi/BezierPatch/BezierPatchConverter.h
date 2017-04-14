@@ -1,5 +1,7 @@
 #pragma once
 
+namespace osdi {
+
 class BezierPatchConverter
 {
 public:
@@ -21,3 +23,5 @@ private:
     OpenSubdiv::Far::PatchTable *m_patch_table;
     const OpenSubdiv::Far::StencilTable *m_stencil_table;
 };
+
+} // namespace osdi

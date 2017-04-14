@@ -2,6 +2,7 @@
 
 #include "BezierPatch.h"
 
+namespace osdi {
 
 struct Ray
 {
@@ -18,3 +19,5 @@ struct BezierPatchHit
 
 bool BezierPatchRaycast(const BezierPatch &bp, const Ray &ray, float zmin, float zmax, float epsilon, BezierPatchHit &hit);
 bool BezierPatchRaycast(const BezierPatch &bp, const float4x4 &trans, const Ray &ray, float zmin, float zmax, float epsilon, BezierPatchHit &hit);
+
+} // namespace osdi

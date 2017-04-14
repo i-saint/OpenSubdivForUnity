@@ -10,6 +10,7 @@
 #define MAX_ITERATION 1000
 
 
+namespace osdi {
 
 class BezierPatchIntersectionImpl
 {
@@ -1296,3 +1297,5 @@ bool BezierPatchRaycast(const BezierPatch &bp, const float4x4 &bptrans, const Ra
     return BPITestBezierPatch_(work, hit, 0.0f, zmax, BPI_EPS);
 }
 */
+
+} // namespace osdi

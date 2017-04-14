@@ -22,29 +22,25 @@ namespace Ist
 
         public void Transform(ref Matrix4x4 mat)
         {
-            osuBPTransform(ref cp00, ref mat);
+            osdiBPTransform(ref cp00, ref mat);
         }
 
         public void GetMinMax(ref Vector3 omin, ref Vector3 omax, float eps=0.0f)
         {
-            osuBPGetMinMax(ref cp00, ref omin, ref omax, eps);
+            osdiBPGetMinMax(ref cp00, ref omin, ref omax, eps);
         }
 
         public void GetAABB(ref BezierPatchAABB dst)
         {
             Vector3 min = Vector3.zero;
             Vector3 max = Vector3.zero;
-            osuBPGetMinMax(ref cp00, ref min, ref max, 0.0f);
+            osdiBPGetMinMax(ref cp00, ref min, ref max, 0.0f);
             dst.center = (max + min) * 0.5f;
             dst.extents = (max - min) * 0.5f;
         }
 
-        [DllImport("OpenSubdivForUnity")]
-        static extern void osuBPTransform(ref Vector3 bp, ref Matrix4x4 mat);
-        [DllImport("OpenSubdivForUnity")]
-        static extern void osuBPGetMinMax(ref Vector3 bp, ref Vector3 omin, ref Vector3 omax, float eps);
-
-
+        [DllImport("osdi")] static extern void osdiBPTransform(ref Vector3 bp, ref Matrix4x4 mat);
+        [DllImport("osdi")] static extern void osdiBPGetMinMax(ref Vector3 bp, ref Vector3 omin, ref Vector3 omax, float eps);
     }
 
     [System.Serializable]
@@ -73,54 +69,54 @@ namespace Ist
 
         public Vector3 Evaluate(Vector2 uv)
         {
-            return osuBPEvaluate(ref cp[0], ref uv);
+            return osdiBPEvaluate(ref cp[0], ref uv);
         }
 
         public Vector3 EvaluateNormal(Vector2 uv)
         {
-            return osuBPEvaluateNormal(ref cp[0], ref uv);
+            return osdiBPEvaluateNormal(ref cp[0], ref uv);
         }
 
 
         public void Split(ref BezierPatch dst0, ref BezierPatch dst1, ref BezierPatch dst2, ref BezierPatch dst3, ref Vector2 uv)
         {
-            osuBPSplit(ref cp[0], ref dst0.cp[0], ref dst1.cp[0], ref dst2.cp[0], ref dst3.cp[0], ref uv);
+            osdiBPSplit(ref cp[0], ref dst0.cp[0], ref dst1.cp[0], ref dst2.cp[0], ref dst3.cp[0], ref uv);
         }
         public void SplitU(ref BezierPatch dst0, ref BezierPatch dst1, float u)
         {
-            osuBPSplitU(ref cp[0], ref dst0.cp[0], ref dst1.cp[0], u);
+            osdiBPSplitU(ref cp[0], ref dst0.cp[0], ref dst1.cp[0], u);
         }
         public void SplitV(ref BezierPatch dst0, ref BezierPatch dst1, float v)
         {
-            osuBPSplitV(ref cp[0], ref dst0.cp[0], ref dst1.cp[0], v);
+            osdiBPSplitV(ref cp[0], ref dst0.cp[0], ref dst1.cp[0], v);
         }
 
         public void Crop(ref BezierPatch dst0, ref Vector2 uv0, ref Vector2 uv1)
         {
-            osuBPCrop(ref cp[0], ref dst0.cp[0], ref uv0, ref uv1);
+            osdiBPCrop(ref cp[0], ref dst0.cp[0], ref uv0, ref uv1);
         }
         public void CropU(ref BezierPatch dst0, ref Vector2 uv0, float u0, float u1)
         {
-            osuBPCropU(ref cp[0], ref dst0.cp[0], u0, u1);
+            osdiBPCropU(ref cp[0], ref dst0.cp[0], u0, u1);
         }
         public void CropV(ref BezierPatch dst0, ref Vector2 uv0, float v0, float v1)
         {
-            osuBPCropV(ref cp[0], ref dst0.cp[0], v0, v1);
+            osdiBPCropV(ref cp[0], ref dst0.cp[0], v0, v1);
         }
 
         public void Transform(ref Matrix4x4 mat)
         {
-            osuBPTransform(ref cp[0], ref mat);
+            osdiBPTransform(ref cp[0], ref mat);
         }
 
         public bool Raycast(Vector3 orig, Vector3 dir, float zmin, float zmax, float epsilon, ref BezierPatchHit hit)
         {
-            return osuBPRaycast(ref cp[0], ref orig, ref dir, zmin, zmax, epsilon, ref hit);
+            return osdiBPRaycast(ref cp[0], ref orig, ref dir, zmin, zmax, epsilon, ref hit);
         }
 
         public bool Raycast(ref Matrix4x4 trans, Vector3 orig, Vector3 dir, float zmin, float zmax, float epsilon, ref BezierPatchHit hit)
         {
-            return osuBPRaycastWithTransform(ref cp[0], ref trans, ref orig, ref dir, zmin, zmax, epsilon, ref hit);
+            return osdiBPRaycastWithTransform(ref cp[0], ref trans, ref orig, ref dir, zmin, zmax, epsilon, ref hit);
         }
 
 
@@ -144,7 +140,7 @@ namespace Ist
         {
             Vector3 min = Vector3.zero;
             Vector3 max = Vector3.zero;
-            osuBPGetMinMax(ref cp[0], ref min, ref max, 0.0f);
+            osdiBPGetMinMax(ref cp[0], ref min, ref max, 0.0f);
             dst.center = (max + min) * 0.5f;
             dst.extents = (max - min) * 0.5f;
         }
@@ -207,34 +203,21 @@ namespace Ist
         }
 
 
-        [DllImport("OpenSubdivForUnity")]
-        static extern void osuBPGetMinMax(ref Vector3 bp, ref Vector3 omin, ref Vector3 omax, float eps);
-        [DllImport("OpenSubdivForUnity")]
-        static extern Vector3 osuBPGetRoughNormal(ref Vector3 bp);
-        [DllImport("OpenSubdivForUnity")]
-        static extern Vector3 osuBPEvaluate(ref Vector3 bp, ref Vector2 uv);
-        [DllImport("OpenSubdivForUnity")]
-        static extern Vector3 osuBPEvaluateNormal(ref Vector3 bp, ref Vector2 uv);
-        [DllImport("OpenSubdivForUnity")]
-        static extern void osuBPSplit(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, ref Vector3 dst2, ref Vector3 dst3, ref Vector2 uv);
-        [DllImport("OpenSubdivForUnity")]
-        static extern void osuBPSplitU(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, float u);
-        [DllImport("OpenSubdivForUnity")]
-        static extern void osuBPSplitV(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, float v);
-        [DllImport("OpenSubdivForUnity")]
-        static extern void osuBPCrop(ref Vector3 bp, ref Vector3 dst0, ref Vector2 uv0, ref Vector2 uv1);
-        [DllImport("OpenSubdivForUnity")]
-        static extern void osuBPCropU(ref Vector3 bp, ref Vector3 dst0, float u0, float u1);
-        [DllImport("OpenSubdivForUnity")]
-        static extern void osuBPCropV(ref Vector3 bp, ref Vector3 dst0, float v0, float v1);
+        [DllImport("osdi")] static extern void osdiBPGetMinMax(ref Vector3 bp, ref Vector3 omin, ref Vector3 omax, float eps);
+        [DllImport("osdi")] static extern Vector3 osdiBPGetRoughNormal(ref Vector3 bp);
+        [DllImport("osdi")] static extern Vector3 osdiBPEvaluate(ref Vector3 bp, ref Vector2 uv);
+        [DllImport("osdi")] static extern Vector3 osdiBPEvaluateNormal(ref Vector3 bp, ref Vector2 uv);
+        [DllImport("osdi")] static extern void osdiBPSplit(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, ref Vector3 dst2, ref Vector3 dst3, ref Vector2 uv);
+        [DllImport("osdi")] static extern void osdiBPSplitU(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, float u);
+        [DllImport("osdi")] static extern void osdiBPSplitV(ref Vector3 bp, ref Vector3 dst0, ref Vector3 dst1, float v);
+        [DllImport("osdi")] static extern void osdiBPCrop(ref Vector3 bp, ref Vector3 dst0, ref Vector2 uv0, ref Vector2 uv1);
+        [DllImport("osdi")] static extern void osdiBPCropU(ref Vector3 bp, ref Vector3 dst0, float u0, float u1);
+        [DllImport("osdi")] static extern void osdiBPCropV(ref Vector3 bp, ref Vector3 dst0, float v0, float v1);
 
-        [DllImport("OpenSubdivForUnity")]
-        static extern void osuBPTransform(ref Vector3 bp, ref Matrix4x4 mat);
+        [DllImport("osdi")] static extern void osdiBPTransform(ref Vector3 bp, ref Matrix4x4 mat);
 
-        [DllImport("OpenSubdivForUnity")]
-        static extern bool osuBPRaycast(ref Vector3 bp, ref Vector3 orig, ref Vector3 dir, float zmin, float zmax, float epsilon, ref BezierPatchHit hit);
-        [DllImport("OpenSubdivForUnity")]
-        static extern bool osuBPRaycastWithTransform(ref Vector3 bp, ref Matrix4x4 mat, ref Vector3 orig, ref Vector3 dir, float zmin, float zmax, float epsilon, ref BezierPatchHit hit);
+        [DllImport("osdi")] static extern bool osdiBPRaycast(ref Vector3 bp, ref Vector3 orig, ref Vector3 dir, float zmin, float zmax, float epsilon, ref BezierPatchHit hit);
+        [DllImport("osdi")] static extern bool osdiBPRaycastWithTransform(ref Vector3 bp, ref Matrix4x4 mat, ref Vector3 orig, ref Vector3 dir, float zmin, float zmax, float epsilon, ref BezierPatchHit hit);
         #endregion
     }
 }
